@@ -11,7 +11,7 @@ The generator asks for the app's id, display name, description and author, write
 Every prompt has a flag:
 
 ```sh
-busy-create-app my-app --id app.example.my-app --name "My App" --description "..." --author "..."
+busy-create-app my-app --id app.example.my_app --name "My App" --description "..." --author "..."
 ```
 
 Anything left out is asked for. `--help` lists the flags.
@@ -20,7 +20,7 @@ Anything left out is asked for. `--help` lists the flags.
 
 ### App ids
 
-An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dot, dash and underscore. The default namespace is `app.example` — a placeholder. Replace it with your own before publishing.
+An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dot and underscore. The default namespace is `app.example` — a placeholder. Replace it with your own before publishing.
 
 ## What you get
 

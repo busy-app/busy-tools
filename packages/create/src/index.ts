@@ -41,20 +41,20 @@ const c = {
   red: wrap(31),
 }
 
-/** The id the app is known by, e.g. `app.example.my-app`. */
-const ID_RE = /^[a-zA-Z0-9._-]+$/
+/** The id the app is known by, e.g. `app.example.my_app`. */
+const ID_RE = /^[a-zA-Z0-9._]+$/
 /** Longest id the manifest accepts. */
 const ID_MAX = 32
 
 /** Placeholder namespace, meant to be replaced before publishing. */
 const NAMESPACE = 'app.example'
 
-/** Turns a folder name into an app id: "My App" → "app.example.my-app". */
+/** Turns a folder name into an app id: "My App" → "app.example.my_app". */
 function suggestId(dirName: string): string {
   const slug = dirName
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .replace(/[^a-z0-9.]+/g, '_')
+    .replace(/^_+|_+$/g, '')
   // A dotted name is already an id; anything else gets the placeholder namespace.
   return slug.includes('.') ? slug : `${NAMESPACE}.${slug || 'app'}`
 }
@@ -232,7 +232,7 @@ async function main() {
     option: 'id',
     fallback: suggestId(basename(target)),
     validate: (v) => {
-      if (!ID_RE.test(v)) return 'only letters, digits, dot, dash and underscore'
+      if (!ID_RE.test(v)) return 'only letters, digits, dot and underscore'
       if (v.length > ID_MAX) return `at most ${ID_MAX} characters, this one is ${v.length}`
       return null
     },

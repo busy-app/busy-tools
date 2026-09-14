@@ -12,7 +12,7 @@ cp .env.example .env   # set VITE_BUSY_ADDR to your device's address
 pnpm build
 ```
 
-The app's id is `{{appId}}`, set in `src/appmeta/manifest.json`. An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dot, dash and underscore. If yours still says `app.example`, change it to your own namespace before publishing.
+The app's id is `{{appId}}`, set in `src/appmeta/manifest.json`. An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dot and underscore. If yours still says `app.example`, change it to your own namespace before publishing.
 
 ## Layout
 

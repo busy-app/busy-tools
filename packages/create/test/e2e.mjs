@@ -243,11 +243,34 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     )
   })
 
+  test('rejects a dash in the id', () => {
+    assert.throws(
+      () =>
+        run(resolve(work, 'node_modules/.bin/busy-create-app'), ['dashed', '--id', 'app.example.my-app'], {
+          cwd: work,
+          input: '',
+        }),
+      /dot and underscore/,
+    )
+  })
+
+  // A dashed folder name still works: the id takes an underscore instead.
+  test('turns a dash in the folder name into an underscore', () => {
+    const dir = resolve(work, 'dashed-name')
+    run(
+      resolve(work, 'node_modules/.bin/busy-create-app'),
+      ['dashed-name', '--name', 'Dashed', '--description', 'd', '--author', APP_AUTHOR, '--no-git'],
+      { cwd: work, input: '' },
+    )
+    const manifest = JSON.parse(readFileSync(resolve(dir, 'src/appmeta/manifest.json'), 'utf8'))
+    assert.equal(manifest.id, 'app.example.dashed_name')
+  })
+
   test('leaves the repository out with --no-git', () => {
     const dir = resolve(work, 'no-git')
     run(
       resolve(work, 'node_modules/.bin/busy-create-app'),
-      ['no-git', '--id', 'app.example.no-git', '--name', 'No Git', '--description', 'd', '--author', APP_AUTHOR, '--no-git'],
+      ['no-git', '--id', 'app.example.no_git', '--name', 'No Git', '--description', 'd', '--author', APP_AUTHOR, '--no-git'],
       { cwd: work, input: '' },
     )
     assert.ok(existsSync(resolve(dir, 'src/main.ts')), 'the app is missing')
