@@ -1,0 +1,33 @@
+{
+  "name": "@busy-app/cli",
+  "version": "0.1.0",
+  "description": "CLI for BUSY Bar app development",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "busy-cli": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "busy",
+    "busybar",
+    "cli"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "vite": "8.1.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.4",
+    "typescript": "~7.0.2"
+  }
+}
