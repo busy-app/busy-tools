@@ -18,6 +18,6 @@
     "vite": "8.1.4"
   },
   "dependencies": {
-    "@busy-app/busy-lib": "^0.20.0"
+    "@busy-app/busy-lib": "^0.20.1"
   }
 }
