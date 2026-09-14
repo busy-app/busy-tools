@@ -3,6 +3,11 @@
   "version": "0.1.1",
   "description": "CLI for BUSY Bar app development",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/busy-app/busy-tools",
+    "directory": "packages/cli"
+  },
   "type": "module",
   "bin": {
     "busy-cli": "dist/index.js"
