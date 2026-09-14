@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v5
         with:
@@ -28,13 +28,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Opens (or updates) the "Version Packages" PR; merging it publishes.
+      # Opens (or updates) the version bump PR; merging it stages the release for approval on npm.
       - uses: changesets/action@v1
         with:
           version: pnpm version
           publish: pnpm release
-          commit: "chore: version packages"
-          title: "chore: version packages"
+          commit: "chore: Bump versions"
+          title: "Bump versions"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"

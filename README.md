@@ -4,7 +4,7 @@ Tooling for building JavaScript apps for the [BUSY Bar](https://busy.bar).
 
 | Package                                 | What it is                                                    |
 | --------------------------------------- | ------------------------------------------------------------- |
-| [`@busy-app/cli`](packages/cli)         | `busy` — builds an app into a device package, and installs it |
+| [`@busy-app/cli`](packages/cli)         | `busy-cli` — builds an app into a device package              |
 | [`create-busy-js-app`](packages/create) | `pnpm create busy-js-app` — scaffolds a new app               |
 
 ## Getting started
@@ -33,7 +33,7 @@ Changes that should be released carry a changeset:
 pnpm changeset
 ```
 
-Merging the "Version Packages" pull request publishes to npm.
+Merging the "Bump versions" pull request stages the release; approve it on npm to publish.
 
 ## License
 
