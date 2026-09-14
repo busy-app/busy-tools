@@ -33,20 +33,20 @@ my-app/
 │   ├── images/
 │   ├── animations/
 │   └── sounds/
-├── shared/                the platform, imported as @shared/*
-├── scripts/               the build
-├── vite.config.ts
+├── shared/                app-level helpers, imported as @shared/*
 └── tsconfig*.json
 ```
 
-`src/` is the app; `shared/` and `scripts/` belong to the template and sit outside it, so replacing them with a package touches no app code. The build scans `src/` only.
+`src/` is the app, and the build scans it only. `shared/` holds the helpers an app needs but a library cannot provide: the device client, the settings reader and a few date wrappers.
+
+Layout, fonts and XPM2 come from `@busy-app/busy-lib`; the build itself from `@busy-app/cli`.
 
 `pnpm build` produces the package in `dist/<id>/`, named after the manifest id; `--out <path>` puts it elsewhere, and `--tgz` packs it into `<id>.tgz` alongside.
 
 ## Working on the generator
 
 ```
-index.mjs       the prompts and the copy
+src/index.ts    the prompts and the copy
 template/       exactly what a generated app looks like
 test/e2e.mjs    packs, scaffolds, installs, type-checks and builds (node:test)
 ```
@@ -61,15 +61,13 @@ Placeholders are `appId`, `appName`, `description`, `author` and `packageName`. 
 ### Trying it locally
 
 ```sh
-node index.mjs my-app          # the fastest loop
-pnpm link --global             # then: busy-create-app my-app
-pnpm test                      # the full path, through a real tarball
+pnpm build && node dist/index.js my-app   # the fastest loop
+pnpm link --global                        # then: busy-create-app my-app
+pnpm test                                 # the full path, through a real tarball
 ```
 
 Only `pnpm test` catches files missing from the published package, so run it before releasing. It builds a generated app, so it needs that app's Node version — `fnm use` (or `nvm use`) reads it from `.nvmrc`. It installs with `--engine-strict`, so a wrong version fails immediately. The generator itself runs on Node 20 and up.
 
-## The platform
+## Versions
 
-Each generated app carries its own copy of `template/shared/` and `template/scripts/`. When they become an npm package, the app keeps its `@shared/*` imports and the folders go away — which is why they sit outside `src/`.
-
-The font maps in `shared/fontMaps/` ship with the template rather than being generated at build time.
+`template/package.json.tpl` pins the ranges a generated app gets for `@busy-app/busy-lib` and `@busy-app/cli`. On a `0.x` release neither range picks up the new minor, so raise it here and release the template alongside.

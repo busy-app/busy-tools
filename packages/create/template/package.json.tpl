@@ -13,7 +13,7 @@
     "node": ">=24 <26"
   },
   "devDependencies": {
-    "@busy-app/cli": "^0.1.1",
+    "@busy-app/cli": "^0.2.0",
     "typescript": "~7.0.2",
     "vite": "8.1.4"
   },
