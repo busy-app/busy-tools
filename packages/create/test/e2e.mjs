@@ -256,7 +256,8 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
 
   test('defaults to a placeholder namespace', () => {
     const dir = resolve(work, 'defaults')
-    run(resolve(work, 'node_modules/.bin/busy-create-app'), ['defaults'], {
+    // --author: its prompt falls back to `git config user.name`, which CI has no value for.
+    run(resolve(work, 'node_modules/.bin/busy-create-app'), ['defaults', '--author', APP_AUTHOR], {
       cwd: work,
       // Enter through every prompt; spare newlines are harmless.
       input: '\n'.repeat(8),
