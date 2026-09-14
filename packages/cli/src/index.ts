@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createCommand } from './commands/create.js'
 import { buildCommand } from './commands/build.js'
 import { c } from './lib/colors.js'
 
@@ -9,6 +10,7 @@ ${c.bold('busy-cli')} — BUSY Bar app development
 ${c.bold('Usage:')} busy-cli <command> [options]
 
 ${c.bold('Commands:')}
+  create [dir]      scaffold a new BUSY Bar JS app
   build  [app]      build app(s) in the current project
 
 Run ${c.dim('busy-cli <command> --help')} for command-specific options.
@@ -16,7 +18,7 @@ Run ${c.dim('busy-cli <command> --help')} for command-specific options.
 
 type Command = (args: string[]) => Promise<void>
 
-const COMMANDS: Record<string, Command> = { build: buildCommand }
+const COMMANDS: Record<string, Command> = { create: createCommand, build: buildCommand }
 
 const [, , cmd, ...args] = process.argv
 
