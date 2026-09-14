@@ -1,0 +1,25 @@
+{
+  "name": "busy-tools",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Tooling for BUSY Bar app development: the SDK, the CLI and the app scaffolder",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22 <26"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build": "pnpm -r --filter=./packages/* build",
+    "typecheck": "pnpm -r --filter=./packages/* typecheck",
+    "test": "pnpm -r --filter=./packages/* test",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.8",
+    "@types/node": "^22.19.4",
+    "typescript": "~7.0.2"
+  }
+}
