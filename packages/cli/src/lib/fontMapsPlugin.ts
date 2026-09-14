@@ -91,6 +91,8 @@ export function fontMaps(root: string): Plugin {
 
   return {
     name: 'font-maps',
+    // Claim `#font-maps` before Vite resolves it through the library's own `imports` map, which points at an empty stub.
+    enforce: 'pre',
 
     buildStart() {
       scanSources()
@@ -123,8 +125,11 @@ export function fontMaps(root: string): Plugin {
       }
     },
 
-    resolveId(id: string) {
-      return id === VIRTUAL_ID ? RESOLVED_ID : null
+    resolveId: {
+      order: 'pre',
+      handler(id: string) {
+        return id === VIRTUAL_ID ? RESOLVED_ID : null
+      },
     },
 
     load(id: string) {
