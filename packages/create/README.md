@@ -1,0 +1,75 @@
+# @busy-app/create-app
+
+Scaffolds a JavaScript app for the BUSY Bar. One app, one repository.
+
+```sh
+pnpm create @busy-app/app my-app
+```
+
+The generator asks for the app's id, display name, description and author, writes the template with those filled in, and runs `git init` unless told not to.
+
+Every prompt has a flag:
+
+```sh
+busy-create-app my-app --id app.example.my-app --name "My App" --description "..." --author "..."
+```
+
+Anything left out is asked for. `--help` lists the flags.
+
+`--no-git` leaves the repository out, for scaffolding into a workspace that already has one.
+
+### App ids
+
+An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dot, dash and underscore. The default namespace is `app.example` — a placeholder. Replace it with your own before publishing.
+
+## What you get
+
+```
+my-app/
+├── src/                   the app
+│   ├── main.ts            the entry point: export default function run()
+│   ├── appmeta/
+│   │   └── manifest.json  id, name, version
+│   ├── images/
+│   ├── animations/
+│   └── sounds/
+├── shared/                the platform, imported as @shared/*
+├── scripts/               the build
+├── vite.config.ts
+└── tsconfig*.json
+```
+
+`src/` is the app; `shared/` and `scripts/` belong to the template and sit outside it, so replacing them with a package touches no app code. The build scans `src/` only.
+
+`pnpm build` produces the package in `dist/<id>/`, named after the manifest id; `--out <path>` puts it elsewhere, and `--tgz` packs it into `<id>.tgz` alongside.
+
+## Working on the generator
+
+```
+index.mjs       the prompts and the copy
+template/       exactly what a generated app looks like
+test/e2e.mjs    packs, scaffolds, installs, type-checks and builds (node:test)
+```
+
+Two conventions in `template/` work around npm, which strips `.gitignore` from packages and misreads a nested `package.json`:
+
+- `_gitignore` and `_env.example` are renamed to their dotted names on copy
+- `*.tpl` files carry `{{placeholders}}`; the suffix is dropped on copy
+
+Placeholders are `appId`, `appName`, `description`, `author` and `packageName`. An unknown one fails the build.
+
+### Trying it locally
+
+```sh
+node index.mjs my-app          # the fastest loop
+pnpm link --global             # then: busy-create-app my-app
+pnpm test                      # the full path, through a real tarball
+```
+
+Only `pnpm test` catches files missing from the published package, so run it before releasing. It builds a generated app, so it needs that app's Node version — `fnm use` (or `nvm use`) reads it from `.nvmrc`. It installs with `--engine-strict`, so a wrong version fails immediately. The generator itself runs on Node 20 and up.
+
+## The platform
+
+Each generated app carries its own copy of `template/shared/` and `template/scripts/`. When they become an npm package, the app keeps its `@shared/*` imports and the folders go away — which is why they sit outside `src/`.
+
+The font maps in `shared/fontMaps/` ship with the template rather than being generated at build time.

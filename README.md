@@ -5,12 +5,12 @@ Tooling for building JavaScript apps for the [BUSY Bar](https://busy.bar).
 | Package                                 | What it is                                                    |
 | --------------------------------------- | ------------------------------------------------------------- |
 | [`@busy-app/cli`](packages/cli)         | `busy-cli` — builds an app into a device package              |
-| [`create-busy-js-app`](packages/create) | `pnpm create busy-js-app` — scaffolds a new app               |
+| [`@busy-app/create-app`](packages/create) | `pnpm create @busy-app/app` — scaffolds a new app            |
 
 ## Getting started
 
 ```sh
-pnpm create busy-js-app my-app
+pnpm create @busy-app/app my-app
 cd my-app
 pnpm install
 pnpm build

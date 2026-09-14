@@ -1,0 +1,41 @@
+{
+  "name": "@busy-app/create-app",
+  "version": "0.1.0",
+  "description": "Scaffolds a JavaScript app for the BUSY Bar",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/busy-app/busy-tools",
+    "directory": "packages/create"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "bin": {
+    "busy-create-app": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "template"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "pnpm build",
+    "test": "node --test",
+    "prepublishOnly": "pnpm build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "busy",
+    "busy-bar",
+    "template"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.19.4",
+    "typescript": "~7.0.2"
+  }
+}

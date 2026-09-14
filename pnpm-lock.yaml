@@ -31,7 +31,14 @@ importers:
         specifier: ~7.0.2
         version: 7.0.2
 
-  packages/create: {}
+  packages/create:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.4
+        version: 22.20.1
+      typescript:
+        specifier: ~7.0.2
+        version: 7.0.2
 
 packages:
 
