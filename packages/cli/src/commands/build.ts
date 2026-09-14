@@ -32,11 +32,17 @@ export async function buildCommand(args: string[]): Promise<void> {
 
   const out = outFlag === -1 ? undefined : args[outFlag + 1]
 
+  const tgz = args.includes('--tgz')
+  const tgzOnly = args.includes('--tgz-only')
+  if (tgz && tgzOnly) {
+    throw new Error('--tgz and --tgz-only are mutually exclusive: one keeps the folder, the other does not')
+  }
+
   await build(cwd, {
     ...(out ? { out } : {}),
     minify: !args.includes('--no-minify'),
     bundle: args.includes('--bundle'),
-    tgz: args.includes('--tgz'),
-    tgzOnly: args.includes('--tgz-only'),
+    tgz,
+    tgzOnly,
   })
 }

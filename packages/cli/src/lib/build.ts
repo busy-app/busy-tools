@@ -106,14 +106,15 @@ export type Options = {
   out?: string
   minify?: boolean
   bundle?: boolean
+  /** Pack into `<id>.tgz`, keeping the folder. */
   tgz?: boolean
-  /** Drop the package folder once packed; implies `tgz`. */
+  /** Pack into `<id>.tgz` and drop the folder. Not to be combined with `tgz`. */
   tgzOnly?: boolean
 }
 
 /** Builds the app at `root`, returning the package folder or, when packing, the archive. */
 export async function build(root: string, opts: Options = {}): Promise<string> {
-  const { out, minify = true, bundle = false, tgzOnly = false, tgz = tgzOnly } = opts
+  const { out, minify = true, bundle = false, tgz = false, tgzOnly = false } = opts
 
   const destDir = outRoot(root, out)
   const manifest = validateManifest(resolve(appmetaDir(root), 'manifest.json'))
@@ -150,7 +151,7 @@ export async function build(root: string, opts: Options = {}): Promise<string> {
 
   let result = outDir
 
-  if (tgz) {
+  if (tgz || tgzOnly) {
     const archive = resolve(destDir, `${manifest.id}.tgz`)
     // Packed from destDir so the archive holds the <id>/ folder itself.
     execFileSync('tar', ['-czf', archive, '-C', destDir, manifest.id], { stdio: 'inherit' })
