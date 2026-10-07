@@ -38,6 +38,7 @@ async function draw(ticks: number): Promise<void> {
  */
 export default function run(): void {
   let ticks = 0;
+  let stopped = false;
 
   const report = (err: unknown) =>
     console.error(`${APP}: ${err instanceof Error ? err.message : String(err)}`);
@@ -45,8 +46,19 @@ export default function run(): void {
   void draw(ticks).catch(report);
 
   // Tick errors are reported, not thrown: one failed request must not stop the loop.
-  setInterval(() => {
+  const timer = setInterval(() => {
     ticks += 1;
     void draw(ticks).catch(report);
   }, TICK_MS);
+
+  // Back leaves the app. Once the timer is cleared and the handler detached, nothing keeps it alive and the device takes the screen back.
+  const unbind = listen("input", (event) => {
+    if (stopped || event.key !== "back" || event.action !== "press") return;
+
+    stopped = true;
+    clearInterval(timer);
+
+    // Not detached from inside the handler itself: with nothing else left the unbind stops the app on the spot, while this handler is still running.
+    setTimeout(unbind, 0);
+  });
 }
