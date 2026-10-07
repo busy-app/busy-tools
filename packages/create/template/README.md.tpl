@@ -50,6 +50,10 @@ A file whose extension disagrees with the folder it sits in is still placed by t
 
 Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`: build a tree out of `row` / `column` / `stack`, hand it to `render()`, and send the result with `device.DisplayDraw()`. The screen is 72×16 pixels.
 
+## Input
+
+`listen("input", handler)` delivers the device keys: `ok`, `start` and `back` with a `press` / `release` action, and `encoder` with a `delta` of `1` or `-1`. It returns an unbind function.
+
 ## Commands
 
 | Command | What it does |
