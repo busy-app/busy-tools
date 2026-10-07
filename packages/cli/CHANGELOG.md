@@ -1,5 +1,13 @@
 # @busy-app/cli
 
+## 0.3.0
+
+### Minor Changes
+
+- d097973: Add the app command: install, run, stop and uninstall apps on a connected BUSY Bar, over USB or Wi-Fi
+
+  Colors are now off when the output is not a terminal or NO_COLOR is set
+
 ## 0.2.1
 
 ### Patch Changes
