@@ -1,5 +1,11 @@
 # @busy-app/create-app
 
+## 0.1.3
+
+### Patch Changes
+
+- 7a1112b: Leave the app on the back key in the template, and declare `listen()` and its input events in `env.d.ts`
+
 ## 0.1.2
 
 ### Patch Changes
