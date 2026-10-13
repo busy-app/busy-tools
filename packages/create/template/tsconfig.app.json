@@ -29,6 +29,6 @@
     "noFallthroughCasesInSwitch": true
   },
   /* The app, and the platform it builds against. */
-  "include": ["./src", "./shared", "./env.d.ts"],
+  "include": ["./src", "./shared", "./types"],
   "exclude": ["node_modules", "dist"]
 }
