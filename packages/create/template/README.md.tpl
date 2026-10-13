@@ -40,16 +40,18 @@ Both icons are optional; without them a default is used.
 
 ## Resources
 
-Anything in `src/` that isn't a source file is copied into the package. Files in `src/images`, `src/animations` and `src/sounds` keep their folder; everything else is sorted by extension into the same three, and whatever has no match lands in `resources/`.
+Anything in `src/` that isn't a source file is copied into the package, sorted by what the BUSY Bar can read:
 
 | Extension | Goes to |
 | --- | --- |
-| `.png` `.jpg` `.jpeg` `.gif` `.bmp` `.webp` `.svg` `.image` `.ico` | `images/` |
-| `.anim` `.animation` | `animations/` |
-| `.wav` `.snd` `.sng` `.mp3` `.ogg` `.rtttl` | `sounds/` |
+| `.png` `.image` | `images/` |
+| `.anim` | `animations/` |
+| `.snd` | `sounds/` |
 | anything else | `resources/` |
 
-A file whose extension disagrees with the folder it sits in is still placed by the folder, with a warning.
+A file in `src/images`, `src/animations` or `src/sounds` keeps its folder as long as the BUSY Bar reads its format.
+
+`images/`, `animations/` and `sounds/` hold only those formats. An image, animation or sound in another one — `.jpg`, `.gif`, `.svg`, `.wav`, `.mp3` and the like — goes to `resources/`, and the build warns that the device cannot read it.
 
 Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`: build a tree out of `row` / `column` / `stack`, hand it to `render()`, and send the result with `device.DisplayDraw()`. The screen is 72×16 pixels.
 
@@ -61,8 +63,8 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 
 | Command | What it does |
 | --- | --- |
-| `pnpm build` | builds the package into `dist/` |
-| `pnpm build --out <path>` | builds into `<path>` instead |
+| `pnpm build` | empties `dist/` and builds the package into it |
+| `pnpm build --out <path>` | builds into `<path>` instead, replacing only this app's package there |
 | `pnpm build --tgz` | also packs the package into a `.tgz` beside it |
 | `pnpm build --tgz-only` | packs the `.tgz` and leaves nothing else |
 | `pnpm build --tgz --tgz-name <name>` | names the `.tgz`, e.g. `"{id}-{version}.tgz"` |
