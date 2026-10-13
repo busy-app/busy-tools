@@ -300,7 +300,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
       { cwd: work, input: '' },
     )
     const manifest = JSON.parse(readFileSync(resolve(dir, 'src/appmeta/manifest.json'), 'utf8'))
-    assert.equal(manifest.id, 'app.example.dashed_name')
+    assert.equal(manifest.id, 'app.nobody.dashed_name')
   })
 
   test('leaves the repository out with --no-git', () => {
@@ -314,12 +314,25 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     assert.ok(!existsSync(resolve(dir, '.git')), '--no-git still initialized a repository')
   })
 
+  test('falls back to a placeholder namespace', () => {
+    // No Latin letters or digits in one author, too many in the other.
+    for (const [dir, author] of [['cyrillic', 'Иван'], ['lengthy', 'A Remarkably Long Author Name']]) {
+      run(
+        resolve(work, 'node_modules/.bin/busy-create-app'),
+        [dir, '--author', author, '--name', 'N', '--description', 'd', '--no-git', '--no-install'],
+        { cwd: work, input: '' },
+      )
+      const manifest = JSON.parse(readFileSync(resolve(work, dir, 'src/appmeta/manifest.json'), 'utf8'))
+      assert.equal(manifest.id, `app.example.${dir}`)
+    }
+  })
+
   test('leaves the dependencies out with --no-install', () => {
     // Scaffolded with --no-install by the test above.
     assert.ok(!existsSync(resolve(work, 'no-git', 'node_modules')), '--no-install still installed the dependencies')
   })
 
-  test('defaults to a placeholder namespace', () => {
+  test('defaults to a namespace made from the author', () => {
     const dir = resolve(work, 'defaults')
     // --author: its prompt falls back to `git config user.name`, which CI has no value for.
     run(resolve(work, 'node_modules/.bin/busy-create-app'), ['defaults', '--author', APP_AUTHOR, '--no-install'], {
@@ -328,6 +341,6 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
       input: '\n'.repeat(8),
     })
     const manifest = JSON.parse(readFileSync(resolve(dir, 'src/appmeta/manifest.json'), 'utf8'))
-    assert.equal(manifest.id, 'app.example.defaults')
+    assert.equal(manifest.id, 'app.nobody.defaults')
   })
 })

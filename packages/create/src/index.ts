@@ -3,7 +3,7 @@
 //
 //   pnpm create @busy-app/app [directory] [options]
 //
-// Asks for the app's id, name, description, author and API version, copies the template with those substituted, initializes a git repository and installs the dependencies. Every prompt has a flag; anything not passed is asked for.
+// Asks for the app's author, id, name, description and API version, copies the template with those substituted, initializes a git repository and installs the dependencies. Every prompt has a flag; anything not passed is asked for.
 
 import { execFileSync } from 'node:child_process'
 import { createInterface } from 'node:readline'
@@ -38,7 +38,7 @@ const c = {
   red: wrap(31),
 }
 
-/** The id the app is known by, e.g. `app.example.my_app`. */
+/** The id the app is known by, e.g. `app.jane_doe.my_app`. */
 const ID_RE = /^[a-zA-Z0-9._]+$/
 /** Longest id the manifest accepts. */
 const ID_MAX = 32
@@ -47,17 +47,27 @@ const ID_MAX = 32
 const API_VERSION = '27.12.0'
 const API_VERSION_RE = /^\d+\.\d+\.\d+$/
 
-/** Placeholder namespace, meant to be replaced before publishing. */
-const NAMESPACE = 'app.example'
+/** The namespace segment used when the author's name gives none; meant to be replaced before publishing. */
+const PLACEHOLDER = 'example'
 
-/** Turns a folder name into an app id: "My App" → "app.example.my_app". */
-function suggestId(dirName: string): string {
-  const slug = dirName
+/** Lowercases a name and turns every run of other characters into an underscore: "My App" → "my_app". */
+function slugify(text: string, keep = ''): string {
+  return text
     .toLowerCase()
-    .replace(/[^a-z0-9.]+/g, '_')
+    .replace(new RegExp(`[^a-z0-9${keep}]+`, 'g'), '_')
     .replace(/^_+|_+$/g, '')
-  // A dotted name is already an id; anything else gets the placeholder namespace.
-  return slug.includes('.') ? slug : `${NAMESPACE}.${slug || 'app'}`
+}
+
+/** Turns a folder name and the author into an app id: "My App" by "Jane Doe" → "app.jane_doe.my_app". */
+function suggestId(dirName: string, author: string): string {
+  const slug = slugify(dirName, '.')
+  // A dotted name is already an id.
+  if (slug.includes('.')) return slug
+
+  const app = slug || 'app'
+  const id = `app.${slugify(author) || PLACEHOLDER}.${app}`
+  // An author too long to fit, or one with no Latin letters or digits, leaves the placeholder.
+  return id.length > ID_MAX ? `app.${PLACEHOLDER}.${app}` : id
 }
 
 /**
@@ -73,7 +83,7 @@ function packageNameFor(dirName: string): string {
   return slug || 'app'
 }
 
-/** "app.example.my-app" → "My app". */
+/** "app.jane_doe.my_app" → "My app". */
 function suggestName(appId: string): string {
   const tail = appId.split('.').pop() ?? appId
   const words = tail.replace(/[-_]+/g, ' ').trim()
@@ -98,10 +108,10 @@ Usage: busy-create-app [directory] [options]
 
 Options:
   --dir <name>          the directory to create, if not given as an argument
-  --id <id>             app id, e.g. app.example.my-app
+  --author <name>       author
+  --id <id>             app id, e.g. app.jane_doe.my_app
   --name <name>         display name
   --description <text>  one-line description
-  --author <name>       author
   --api-version <x.y.z> minimum BUSY Bar HTTP API version the app needs (default: ${API_VERSION})
   --no-git              skip git init
   --no-install          skip pnpm install
@@ -234,9 +244,15 @@ async function main() {
   })
   const target = resolve(process.cwd(), dirName)
 
+  // Asked for before the id, which defaults to a namespace made from it.
+  const author = await ask('Author', {
+    option: 'author',
+    fallback: gitAuthor(),
+    validate: (v) => (v ? null : 'an author is required'),
+  })
   const appId = await ask('App id', {
     option: 'id',
-    fallback: suggestId(basename(target)),
+    fallback: suggestId(basename(target), author),
     validate: (v) => {
       if (!ID_RE.test(v)) return 'only letters, digits, dot and underscore'
       if (v.length > ID_MAX) return `at most ${ID_MAX} characters, this one is ${v.length}`
@@ -251,11 +267,6 @@ async function main() {
   const description = await ask('Description', {
     option: 'description',
     fallback: appName,
-  })
-  const author = await ask('Author', {
-    option: 'author',
-    fallback: gitAuthor(),
-    validate: (v) => (v ? null : 'an author is required'),
   })
   const apiVersion = await ask('API version', {
     option: 'api-version',
