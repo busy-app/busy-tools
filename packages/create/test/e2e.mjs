@@ -206,6 +206,17 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     }
   })
 
+  test('rejects an export in the entry', () => {
+    const main = resolve(appDir, 'src/main.ts')
+    const original = readFileSync(main, 'utf8')
+    writeFileSync(main, original.replace('function main()', 'export default function main()'))
+    try {
+      assert.throws(() => run('pnpm', ['build'], { cwd: appDir }), /must not export anything/)
+    } finally {
+      writeFileSync(main, original)
+    }
+  })
+
   test('redirects the build with --out', () => {
     run('pnpm', ['build', '--out', '../elsewhere'], { cwd: appDir })
     assert.ok(

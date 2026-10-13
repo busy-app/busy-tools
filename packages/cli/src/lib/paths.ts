@@ -2,7 +2,7 @@
 //
 //   my-app/
 //   └── src/
-//       ├── main.ts        ← the entry point: export default function run()
+//       ├── main.ts        ← the entry point: function main(), called at the end of the file
 //       ├── appmeta/       ← manifest.json, plus settings.json and icons
 //       └── images/        ← resources; also animations/, sounds/, or any other file
 //

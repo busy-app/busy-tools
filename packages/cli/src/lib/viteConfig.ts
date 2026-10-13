@@ -1,6 +1,6 @@
 // Vite config, built in code instead of read from a file in the project — busy-cli owns the build, projects only hold sources.
 
-import { extname, relative, resolve, sep } from 'node:path'
+import { basename, extname, relative, resolve, sep } from 'node:path'
 import type { InlineConfig, Plugin } from 'vite'
 import { fontMaps } from './fontMapsPlugin.js'
 import { appDir, findEntry } from './paths.js'
@@ -15,20 +15,19 @@ export type BuildOptions = {
   bundle: boolean
 }
 
-// JerryScript runs main.js as a plain script. Rolldown already inlines the default export into a call; this is the fallback for bundlers that still emit `export {X as default}` / `export default X`.
-function callDefaultExport(): Plugin {
+// The BUSY Bar evaluates main.js from top to bottom and never looks at what it exports, so the entry starts the app with a call of its own: `function main() { … }` and `main()` below it.
+// An export there would be dead at best, and a default export is the old way to start an app, which no longer does anything. Only the entry is checked; the modules it imports export as they please.
+function forbidEntryExports(entry: string): Plugin {
   return {
-    name: 'call-default-export',
-    renderChunk(code, chunk) {
-      if (!chunk.isEntry) return null
-      if (/\n([A-Za-z_$][\w$]*)\(\);\s*$/.test(code)) return null
-      const re = /export\s*(?:\{\s*([A-Za-z_$][\w$]*)\s+as\s+default\s*\}|default\s+([A-Za-z_$][\w$]*)\s*)\s*;?\s*$/
-      const match = code.match(re)
-      const name = match?.[1] ?? match?.[2]
-      if (!name) {
-        return this.error('call-default-export: no default export at the end of main.js. The app must have `export default function run()`.')
-      }
-      return { code: code.replace(re, `${name}();\n`), map: null }
+    name: 'forbid-entry-exports',
+    moduleParsed(info) {
+      if (info.id !== entry || info.exports.length === 0) return
+      const name = basename(entry)
+      this.error(
+        `${name} must not export anything, but it exports ${info.exports.join(', ')}.\n` +
+          `The BUSY Bar runs ${name}, it does not import it.\n` +
+          'Remove the export and start the app with a call at the end of the file: `function main() { … }` followed by `main()`.',
+      )
     },
   }
 }
@@ -46,7 +45,7 @@ export function buildViteConfig(root: string, { outDir, addr, minify, bundle }: 
     // .anim files are binary device assets, served as URLs.
     assetsInclude: ['**/*.anim'],
     define: { __BUSY_ADDR__: JSON.stringify(addr) },
-    plugins: [fontMaps(root), callDefaultExport()],
+    plugins: [fontMaps(root), forbidEntryExports(entry)],
     build: {
       outDir: resolve(outDir, 'scripts'),
       emptyOutDir: true,
@@ -54,7 +53,7 @@ export function buildViteConfig(root: string, { outDir, addr, minify, bundle }: 
       minify: minify ? 'oxc' : false,
       rollupOptions: {
         input: entry,
-        // The entry export must survive tree-shaking.
+        // main.js exports nothing, and nothing may be hoisted into it for the other chunks to import.
         preserveEntrySignatures: 'strict',
         output: {
           entryFileNames: 'main.js',
