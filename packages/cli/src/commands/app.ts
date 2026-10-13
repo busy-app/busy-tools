@@ -1,8 +1,10 @@
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { basename, relative, resolve } from 'node:path'
+import { readAppId } from '../lib/build.js'
 import { c, helpRow } from '../lib/colors.js'
 import { DEFAULT_ADDR, type Device, ensureReachable, request, takeDevice } from '../lib/device.js'
+import { findProject, outRoot } from '../lib/paths.js'
 
 const USAGE = `
 ${c.bold('busy-cli app')} — manage apps on a connected BUSY Bar
@@ -10,10 +12,13 @@ ${c.bold('busy-cli app')} — manage apps on a connected BUSY Bar
 ${c.bold('Usage:')} busy-cli app ${c.cyan('<command>')} [options]
 
 ${c.bold('Commands:')}
-${helpRow('install <file.tgz>', 'upload an app package and install it')}
-${helpRow('run <app-id>', 'launch an installed app')}
+${helpRow('install [file.tgz]', 'upload an app package and install it')}
+${helpRow('uninstall [app-id]', 'remove an installed app, keeping its settings')}
+${helpRow('run [app-id]', 'launch an installed app')}
 ${helpRow('stop', 'quit the running app')}
-${helpRow('uninstall <app-id>', 'remove an installed app, keeping its settings')}
+
+  Run from an app folder, ${c.cyan('uninstall')} and ${c.cyan('run')} need no id: it is read from appmeta/manifest.json.
+  ${c.cyan('install')} without a file takes dist/<id>.tgz of that folder, the package ${c.cyan('busy-cli build --tgz')} makes. It does not build anything itself.
 
 ${c.bold('Options:')}
 ${helpRow('--addr <host>', `BUSY Bar address ${c.dim(`(default: ${DEFAULT_ADDR}, its default address over USB)`)}`)}
@@ -56,22 +61,40 @@ export async function appCommand(args: string[]): Promise<void> {
 
   switch (sub) {
     case 'install':
-      if (!target) throw new Error('app install needs a path to a .tgz package')
-      return install(device, target)
+      return install(device, target ?? ownPackage())
     case 'run':
-      if (!target) throw new Error('app run needs an app id')
-      return run(device, target)
+      return run(device, target ?? ownAppId('run'))
     case 'stop':
       return stop(device)
     case 'uninstall':
-      if (!target) throw new Error('app uninstall needs an app id')
-      return uninstall(device, target)
+      return uninstall(device, target ?? ownAppId('uninstall'))
     case undefined:
       console.log(USAGE)
       return
     default:
       throw new Error(`Unknown app command: ${sub}\n${USAGE}`)
   }
+}
+
+const APP_FOLDER = 'an app folder: one that has appmeta/manifest.json, directly or under src/'
+
+/** The id of the app in the current folder, for a command given none. */
+function ownAppId(command: string): string {
+  const project = findProject(process.cwd())
+  if (!project) throw new Error(`app ${command} needs an app id.\nOr run it from ${APP_FOLDER}.`)
+  return readAppId(project)
+}
+
+/** The package of the app in the current folder, where `busy-cli build --tgz` leaves it. Nothing is built here: a missing package is an error. */
+function ownPackage(): string {
+  const project = findProject(process.cwd())
+  if (!project) throw new Error(`app install needs a path to a .tgz package.\nOr run it from ${APP_FOLDER}.`)
+
+  const path = resolve(outRoot(project), `${readAppId(project)}.tgz`)
+  if (!existsSync(path)) {
+    throw new Error(`Nothing to install: there is no ${relative(process.cwd(), path)}.\nBuild it first with busy-cli build --tgz, or pass the path to a .tgz package.`)
+  }
+  return path
 }
 
 async function install(device: Device, file: string): Promise<void> {
@@ -81,7 +104,7 @@ async function install(device: Device, file: string): Promise<void> {
   const body = await readFile(path)
   await ensureReachable(device)
 
-  console.log(`\n▶ Uploading ${file} to ${device.base.host}`)
+  console.log(`\n▶ Uploading ${basename(path)} to ${device.base.host}`)
   const { install_key, staged, installed } = await request<StageResult>(device, 'POST', '/api/apps/stage', {
     body,
     timeoutMs: INSTALL_TIMEOUT_MS,

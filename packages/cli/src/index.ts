@@ -13,7 +13,7 @@ ${c.bold('Usage:')} busy-cli ${c.cyan('<command>')} [options]
 ${c.bold('Commands:')}
 ${helpRow('create [dir]', 'scaffold a new BUSY Bar JS app')}
 ${helpRow('build [app]', 'build app(s) in the current project')}
-${helpRow('app <command>', 'install, run, stop or uninstall an app on a connected BUSY Bar')}
+${helpRow('app <command>', 'install, uninstall, run or stop an app on a connected BUSY Bar')}
 
 Run ${c.cyan('busy-cli <command> --help')} for command-specific options.
 `
