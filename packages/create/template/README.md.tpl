@@ -17,10 +17,14 @@ The app's id is `{{appId}}`, set in `src/appmeta/manifest.json`. An id is `<name
 
 `src/` is the app — everything in it is yours to edit.
 
+The entry point is `src/main.ts` (or `src/main.js`). The name is fixed: the build turns it into `scripts/main.js`, the one file the BUSY Bar starts.
+
+`src/main.ts` is run from top to bottom, not imported: it starts the app by calling `main()` at its end and must not export anything. The modules it imports export as usual.
+
 ```
 my-app/
 ├── src/                          the app
-│   ├── main.ts                   the entry point: export default function run()
+│   ├── main.ts                   the entry point: function main(), called at the end
 │   ├── appmeta/
 │   │   ├── manifest.json         id, name, version
 │   │   ├── settings.json         the settings screen — optional

@@ -34,9 +34,9 @@ async function draw(ticks: number): Promise<void> {
 }
 
 /**
- * Entry point. The build rewrites this default export into a call, so what matters is the shape: one function taking no arguments.
+ * Entry point, called at the end of the file: the device runs this script from top to bottom and starts nothing by itself.
  */
-export default function run(): void {
+function main(): void {
   let ticks = 0;
   let stopped = false;
 
@@ -62,3 +62,5 @@ export default function run(): void {
     setTimeout(unbind, 0);
   });
 }
+
+main();

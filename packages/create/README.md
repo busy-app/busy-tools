@@ -27,7 +27,7 @@ An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, do
 ```
 my-app/
 ├── src/                   the app
-│   ├── main.ts            the entry point: export default function run()
+│   ├── main.ts            the entry point: function main(), called at the end
 │   ├── appmeta/
 │   │   └── manifest.json  id, name, version
 │   ├── images/
@@ -37,7 +37,7 @@ my-app/
 └── tsconfig.json
 ```
 
-`src/` is the app, and the build scans it only. `shared/` holds the helpers an app needs but a library cannot provide: the device client, the settings reader and a few date wrappers.
+`src/` is the app, and the build scans it only. Its entry point has to be `src/main.ts` or `src/main.js`: the build emits it as `scripts/main.js`, the name the firmware starts. `shared/` holds the helpers an app needs but a library cannot provide: the device client, the settings reader and a few date wrappers.
 
 Layout, fonts and XPM2 come from `@busy-app/busy-lib`; the build itself from `@busy-app/cli`.
 
