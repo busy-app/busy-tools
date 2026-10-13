@@ -25,10 +25,7 @@ import { parseArgs } from 'node:util'
 const TEMPLATE = fileURLToPath(new URL('../template', import.meta.url))
 
 /** Files npm strips or misreads inside a published package. */
-const RENAME = new Map([
-  ['_gitignore', '.gitignore'],
-  ['_env.example', '.env.example'],
-])
+const RENAME = new Map([['_gitignore', '.gitignore']])
 /** Files carrying {{placeholders}}; the suffix is dropped on copy. */
 const TPL_SUFFIX = '.tpl'
 
@@ -277,7 +274,7 @@ async function main() {
 
   const where = dirName === '.' ? '' : `cd ${dirName}\n  `
   console.log(`\n${c.green('✔')} Created ${c.bold(appId)} in ${target}${git ? '' : c.dim(' (no git)')}`)
-  console.log(`\nNext:\n\n  ${where}pnpm install\n  cp .env.example .env\n  pnpm build\n`)
+  console.log(`\nNext:\n\n  ${where}pnpm install\n  pnpm build\n`)
 
   return target
 }

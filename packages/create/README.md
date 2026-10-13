@@ -53,7 +53,7 @@ test/e2e.mjs    packs, scaffolds, installs, type-checks and builds (node:test)
 
 Two conventions in `template/` work around npm, which strips `.gitignore` from packages and misreads a nested `package.json`:
 
-- `_gitignore` and `_env.example` are renamed to their dotted names on copy
+- `_gitignore` is renamed to `.gitignore` on copy
 - `*.tpl` files carry `{{placeholders}}`; the suffix is dropped on copy
 
 Placeholders are `appId`, `appName`, `description`, `author` and `packageName`. An unknown one fails the build.

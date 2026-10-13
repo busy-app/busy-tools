@@ -8,7 +8,6 @@ A JavaScript app for the BUSY Bar, generated from the BUSY JS app template.
 
 ```sh
 pnpm install
-cp .env.example .env   # set VITE_BUSY_ADDR to your device's address
 pnpm build
 ```
 
@@ -64,6 +63,7 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 | `pnpm build --tgz-only` | packs the `.tgz` and leaves nothing else |
 | `pnpm build --no-minify` | readable output, for debugging |
 | `pnpm build --bundle` | inlines every module into one `main.js` |
+| `pnpm build --addr <host>` | sets the BUSY Bar address the app connects to, `localhost` by default |
 | `pnpm typecheck` | type-checks the app |
 
 ## Build output

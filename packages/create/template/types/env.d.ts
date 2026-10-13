@@ -1,13 +1,7 @@
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  /** BUSY Bar address for dev mode (see .env). */
-  readonly VITE_BUSY_ADDR?: string
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-}
+/** BUSY Bar address the app connects to, set at build time with `busy-cli build --addr`; `localhost` by default, the device the app runs on. */
+declare const __BUSY_ADDR__: string
 
 /** A .anim file is a binary device asset; Vite returns its URL. */
 declare module '*.anim' {
