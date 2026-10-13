@@ -8,6 +8,8 @@ import { appDir, findEntry } from './paths.js'
 export type BuildOptions = {
   /** Where the package is assembled; the bundle lands in its `scripts/`. */
   outDir: string
+  /** BUSY Bar address the app connects to; replaces `__BUSY_ADDR__` in its sources. */
+  addr: string
   minify: boolean
   /** Emit a single scripts/main.js instead of one file per module. */
   bundle: boolean
@@ -32,7 +34,7 @@ function callDefaultExport(): Plugin {
 }
 
 /** Builds the Vite config for the app at `root`. */
-export function buildViteConfig(root: string, { outDir, minify, bundle }: BuildOptions): InlineConfig {
+export function buildViteConfig(root: string, { outDir, addr, minify, bundle }: BuildOptions): InlineConfig {
   const app = appDir(root)
   const entry = findEntry(root)
   if (!entry) {
@@ -43,6 +45,7 @@ export function buildViteConfig(root: string, { outDir, minify, bundle }: BuildO
     root,
     // .anim files are binary device assets, served as URLs.
     assetsInclude: ['**/*.anim'],
+    define: { __BUSY_ADDR__: JSON.stringify(addr) },
     plugins: [fontMaps(root), callDefaultExport()],
     build: {
       outDir: resolve(outDir, 'scripts'),

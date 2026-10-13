@@ -1,12 +1,13 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { build } from '../lib/build.js'
+import { build, DEFAULT_ADDR } from '../lib/build.js'
 
 const USAGE = `
 Usage: busy-cli build [options]
 
 Options:
   --out <path>     output directory (default: dist, relative to the project)
+  --addr <host>    BUSY Bar address the app connects to (default: ${DEFAULT_ADDR}, the device the app runs on)
   --no-minify      skip minification (readable output for on-device debugging)
   --bundle         bundle all modules into a single scripts/main.js
   --tgz            also pack the built app into <id>.tgz
@@ -32,6 +33,13 @@ export async function buildCommand(args: string[]): Promise<void> {
 
   const out = outFlag === -1 ? undefined : args[outFlag + 1]
 
+  const addrFlag = args.indexOf('--addr')
+  if (addrFlag !== -1 && !args[addrFlag + 1]) {
+    throw new Error('--addr needs a host')
+  }
+
+  const addr = addrFlag === -1 ? undefined : args[addrFlag + 1]
+
   const tgz = args.includes('--tgz')
   const tgzOnly = args.includes('--tgz-only')
   if (tgz && tgzOnly) {
@@ -40,6 +48,7 @@ export async function buildCommand(args: string[]): Promise<void> {
 
   await build(cwd, {
     ...(out ? { out } : {}),
+    ...(addr ? { addr } : {}),
     minify: !args.includes('--no-minify'),
     bundle: args.includes('--bundle'),
     tgz,

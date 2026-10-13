@@ -101,9 +101,13 @@ function rewriteAssetUrls(scriptsDir: string, moved: Map<string, string>): void 
   }
 }
 
+export const DEFAULT_ADDR = 'localhost'
+
 export type Options = {
   /** Output directory; a relative path resolves against the project root. */
   out?: string
+  /** BUSY Bar address compiled into the app. */
+  addr?: string
   minify?: boolean
   bundle?: boolean
   /** Pack into `<id>.tgz`, keeping the folder. */
@@ -114,11 +118,12 @@ export type Options = {
 
 /** Builds the app at `root`, returning the package folder or, when packing, the archive. */
 export async function build(root: string, opts: Options = {}): Promise<string> {
-  const { out, minify = true, bundle = false, tgz = false, tgzOnly = false } = opts
+  const { out, addr = DEFAULT_ADDR, minify = true, bundle = false, tgz = false, tgzOnly = false } = opts
 
   const destDir = outRoot(root, out)
   const manifest = validateManifest(resolve(appmetaDir(root), 'manifest.json'))
   console.log(`\n▶ Building ${manifest.id} v${manifest.version}`)
+  if (addr !== DEFAULT_ADDR) console.log(`  addr: ${addr}`)
 
   const outDir = resolve(destDir, manifest.id)
 
@@ -126,7 +131,7 @@ export async function build(root: string, opts: Options = {}): Promise<string> {
   rmSync(outDir, { recursive: true, force: true })
   mkdirSync(destDir, { recursive: true })
 
-  await viteBuild(buildViteConfig(root, { outDir, minify, bundle }))
+  await viteBuild(buildViteConfig(root, { outDir, addr, minify, bundle }))
 
   if (!existsSync(resolve(outDir, 'scripts/main.js'))) {
     throw new Error('build produced no scripts/main.js')
