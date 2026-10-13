@@ -5,7 +5,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 import type { Plugin } from 'vite'
-import { appDir, mapsDir } from './paths.js'
+import { mapsDir, type Project } from './paths.js'
 
 /** A `font:` whose value the scan could not read, kept to report where it is. */
 type DynamicFont = { file: string; line: number; expr: string }
@@ -15,7 +15,8 @@ const RESOLVED_ID = '\0' + VIRTUAL_ID
 
 const SOURCE_FILE = /\.(ts|tsx|js|mjs|jsx)$/
 
-const SKIP_DIRS = new Set(['node_modules'])
+// dist: an app without src/ has its build output beside its sources.
+const SKIP_DIRS = new Set(['node_modules', 'dist'])
 
 /** Every `font:` property, literal or not. */
 const FONT_PROP = /\bfont\s*:\s*([^,;}\n)]+)/g
@@ -54,9 +55,9 @@ function scan(code: string, file: string, found: Set<string>, dynamic: DynamicFo
   }
 }
 
-export function fontMaps(root: string): Plugin {
-  const maps = mapsDir(root)
-  const app = appDir(root)
+export function fontMaps(project: Project): Plugin {
+  const maps = mapsDir(project)
+  const { root, app } = project
 
   /** Font names that have a generated map. */
   function available(): Set<string> {

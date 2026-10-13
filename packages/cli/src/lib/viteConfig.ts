@@ -3,7 +3,7 @@
 import { basename, extname, relative, resolve, sep } from 'node:path'
 import type { InlineConfig, Plugin } from 'vite'
 import { fontMaps } from './fontMapsPlugin.js'
-import { appDir, findEntry } from './paths.js'
+import { findEntry, type Project } from './paths.js'
 
 export type BuildOptions = {
   /** Where the package is assembled; the bundle lands in its `scripts/`. */
@@ -32,10 +32,10 @@ function forbidEntryExports(entry: string): Plugin {
   }
 }
 
-/** Builds the Vite config for the app at `root`. */
-export function buildViteConfig(root: string, { outDir, addr, minify, bundle }: BuildOptions): InlineConfig {
-  const app = appDir(root)
-  const entry = findEntry(root)
+/** Builds the Vite config for the app of `project`. */
+export function buildViteConfig(project: Project, { outDir, addr, minify, bundle }: BuildOptions): InlineConfig {
+  const { root, app } = project
+  const entry = findEntry(project)
   if (!entry) {
     throw new Error(`build: ${app} has neither main.ts nor main.js`)
   }
@@ -45,7 +45,7 @@ export function buildViteConfig(root: string, { outDir, addr, minify, bundle }: 
     // .anim files are binary device assets, served as URLs.
     assetsInclude: ['**/*.anim'],
     define: { __BUSY_ADDR__: JSON.stringify(addr) },
-    plugins: [fontMaps(root), forbidEntryExports(entry)],
+    plugins: [fontMaps(project), forbidEntryExports(entry)],
     build: {
       outDir: resolve(outDir, 'scripts'),
       emptyOutDir: true,
@@ -66,6 +66,8 @@ export function buildViteConfig(root: string, { outDir, addr, minify, bundle }: 
                 // Each of the app's own modules gets a file next to main.js; dependencies are inlined into the chunk using them.
                 manualChunks(id: string) {
                   if (!id.startsWith(app)) return undefined
+                  // Without src/ the dependencies sit inside the app directory.
+                  if (id.includes('/node_modules/')) return undefined
                   if (id === entry) return undefined
                   // Sources only; assets take their own path.
                   if (!/\.(ts|js)$/.test(id)) return undefined

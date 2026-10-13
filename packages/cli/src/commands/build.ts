@@ -1,6 +1,5 @@
-import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { build, DEFAULT_ADDR } from '../lib/build.js'
+import { requireProject } from '../lib/paths.js'
 
 const USAGE = `
 Usage: busy-cli build [options]
@@ -25,10 +24,7 @@ export async function buildCommand(args: string[]): Promise<void> {
     return
   }
 
-  const cwd = process.cwd()
-  if (!existsSync(resolve(cwd, 'src/appmeta/manifest.json'))) {
-    throw new Error(`No src/appmeta/manifest.json found in ${cwd}.\nRun this command from inside a BUSY Bar app project.`)
-  }
+  const project = requireProject(process.cwd())
 
   const outFlag = args.indexOf('--out')
   if (outFlag !== -1 && !args[outFlag + 1]) {
@@ -60,7 +56,7 @@ export async function buildCommand(args: string[]): Promise<void> {
 
   const tgzName = nameFlag === -1 ? undefined : args[nameFlag + 1]
 
-  await build(cwd, {
+  await build(project, {
     ...(out ? { out } : {}),
     ...(addr ? { addr } : {}),
     minify: !args.includes('--no-minify'),

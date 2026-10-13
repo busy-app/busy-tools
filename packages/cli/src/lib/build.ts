@@ -8,7 +8,8 @@
 //
 // The package folder is named after the manifest id.
 //
-// Resources in src/images, src/animations and src/sounds are copied as-is; anything else in src/ is sorted by file type.
+// With src/, resources in src/images, src/animations and src/sounds are copied as-is, and anything else in src/ is sorted by file type.
+// Without src/ the app shares its directory with the rest of the project, so only its images/, animations/, sounds/ and resources/ are taken; a resource lying beside them is reported and left out.
 
 import {
   cpSync,
@@ -22,8 +23,8 @@ import {
 import { basename, relative, resolve } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { build as viteBuild } from 'vite'
-import { appDir, appmetaDir, outRoot } from './paths.js'
-import { classify, KNOWN_DIRS } from './resources.js'
+import { appmetaDir, outRoot, type Project } from './paths.js'
+import { classify, isMedia, KNOWN_DIRS, RESOURCE_DIRS } from './resources.js'
 import { buildViteConfig } from './viteConfig.js'
 
 /** Only what the build reads. The firmware owns the manifest schema; the file is copied into the package as it is. */
@@ -52,10 +53,19 @@ function archiveName(pattern: string, manifest: Manifest): string {
   return name
 }
 
+/** The id in the project's manifest, for the commands that need nothing else from it. */
+export function readAppId(project: Project): string {
+  const { id } = JSON.parse(readFileSync(resolve(appmetaDir(project), 'manifest.json'), 'utf8')) as Partial<Manifest>
+  if (typeof id !== 'string' || id === '') {
+    throw new Error('manifest.id is required')
+  }
+  return id
+}
+
 /** Validates the manifest against the spec; throws on violation. */
 function validateManifest(path: string): Manifest {
   if (!existsSync(path)) {
-    throw new Error('src/appmeta/manifest.json is missing and required')
+    throw new Error('appmeta/manifest.json is missing and required')
   }
   const manifest = JSON.parse(readFileSync(path, 'utf8')) as Partial<Manifest>
   if (typeof manifest.id !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(manifest.id)) {
@@ -140,12 +150,13 @@ export type Options = {
   tgzName?: string
 }
 
-/** Builds the app at `root`, returning the package folder or, when packing, the archive. */
-export async function build(root: string, opts: Options = {}): Promise<string> {
+/** Builds the app of `project`, returning the package folder or, when packing, the archive. */
+export async function build(project: Project, opts: Options = {}): Promise<string> {
+  const { root, app, hasSrc } = project
   const { out, addr = DEFAULT_ADDR, minify = true, bundle = false, tgz = false, tgzOnly = false, tgzName = '{id}.tgz' } = opts
 
-  const destDir = outRoot(root, out)
-  const manifest = validateManifest(resolve(appmetaDir(root), 'manifest.json'))
+  const destDir = outRoot(project, out)
+  const manifest = validateManifest(resolve(appmetaDir(project), 'manifest.json'))
   console.log(`\n▶ Building ${manifest.id} v${manifest.version}`)
   if (addr !== DEFAULT_ADDR) console.log(`  addr: ${addr}`)
 
@@ -153,21 +164,34 @@ export async function build(root: string, opts: Options = {}): Promise<string> {
   // Resolved before the build, so a bad name fails at once.
   const archive = resolve(destDir, archiveName(tgzName, manifest))
 
-  // vite empties only scripts/, so clear the whole package folder here.
-  rmSync(outDir, { recursive: true, force: true })
+  // The default dist/ is the build's own, so it starts empty: no package or archive of an earlier build is left to be taken for this one.
+  // A directory given with --out may hold anything else, so there only this app's package folder is replaced.
+  rmSync(out === undefined ? destDir : outDir, { recursive: true, force: true })
   mkdirSync(destDir, { recursive: true })
 
-  await viteBuild(buildViteConfig(root, { outDir, addr, minify, bundle }))
+  await viteBuild(buildViteConfig(project, { outDir, addr, minify, bundle }))
 
   if (!existsSync(resolve(outDir, 'scripts/main.js'))) {
     throw new Error('build produced no scripts/main.js')
   }
 
   // appmeta/: the manifest, plus settings.json and the icons when the app has them.
-  cpSync(appmetaDir(root), resolve(outDir, 'appmeta'), { recursive: true })
+  cpSync(appmetaDir(project), resolve(outDir, 'appmeta'), { recursive: true })
 
   // images/animations/sounds keep their folder; the rest go by extension.
-  layoutResources(appDir(root), outDir)
+  if (hasSrc) {
+    layoutResources(app, outDir)
+  } else {
+    for (const dir of RESOURCE_DIRS) {
+      const path = resolve(app, dir)
+      if (existsSync(path)) layoutResources(path, outDir, (KNOWN_DIRS as string[]).includes(dir) ? dir : undefined)
+    }
+    // A resource in the app's root is in no folder the build takes, so it would be missing on the device without a word.
+    for (const entry of readdirSync(app, { withFileTypes: true })) {
+      if (!entry.isFile() || entry.name.startsWith('.') || !isMedia(entry.name)) continue
+      console.warn(`  ⚠ ${entry.name} is not packaged, move it to ${classify(entry.name).target}/`)
+    }
+  }
 
   // Assets vite emitted land in scripts/_assets/; spread them out and drop it.
   const emitted = resolve(outDir, 'scripts/_assets')
