@@ -112,6 +112,8 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
   })
 
   test('installs', () => {
+    // The generator has installed already; a failure there is only reported, so it is checked here.
+    assert.ok(existsSync(resolve(appDir, 'node_modules/.bin/busy-cli')), 'the generator installed no dependencies')
     // --engine-strict: the app pins a Node range, so a wrong version fails here rather than further down.
     run('pnpm', ['install', '--silent', '--engine-strict'], { cwd: appDir })
   })
@@ -271,7 +273,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     const dir = resolve(work, 'api')
     run(
       resolve(work, 'node_modules/.bin/busy-create-app'),
-      ['api', '--id', 'app.example.api', '--name', 'Api', '--description', 'd', '--author', APP_AUTHOR, '--api-version', '1.2.3', '--no-git'],
+      ['api', '--id', 'app.example.api', '--name', 'Api', '--description', 'd', '--author', APP_AUTHOR, '--api-version', '1.2.3', '--no-git', '--no-install'],
       { cwd: work, input: '' },
     )
     const manifest = JSON.parse(readFileSync(resolve(dir, 'src/appmeta/manifest.json'), 'utf8'))
@@ -294,7 +296,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     const dir = resolve(work, 'dashed-name')
     run(
       resolve(work, 'node_modules/.bin/busy-create-app'),
-      ['dashed-name', '--name', 'Dashed', '--description', 'd', '--author', APP_AUTHOR, '--no-git'],
+      ['dashed-name', '--name', 'Dashed', '--description', 'd', '--author', APP_AUTHOR, '--no-git', '--no-install'],
       { cwd: work, input: '' },
     )
     const manifest = JSON.parse(readFileSync(resolve(dir, 'src/appmeta/manifest.json'), 'utf8'))
@@ -305,17 +307,22 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     const dir = resolve(work, 'no-git')
     run(
       resolve(work, 'node_modules/.bin/busy-create-app'),
-      ['no-git', '--id', 'app.example.no_git', '--name', 'No Git', '--description', 'd', '--author', APP_AUTHOR, '--no-git'],
+      ['no-git', '--id', 'app.example.no_git', '--name', 'No Git', '--description', 'd', '--author', APP_AUTHOR, '--no-git', '--no-install'],
       { cwd: work, input: '' },
     )
     assert.ok(existsSync(resolve(dir, 'src/main.ts')), 'the app is missing')
     assert.ok(!existsSync(resolve(dir, '.git')), '--no-git still initialized a repository')
   })
 
+  test('leaves the dependencies out with --no-install', () => {
+    // Scaffolded with --no-install by the test above.
+    assert.ok(!existsSync(resolve(work, 'no-git', 'node_modules')), '--no-install still installed the dependencies')
+  })
+
   test('defaults to a placeholder namespace', () => {
     const dir = resolve(work, 'defaults')
     // --author: its prompt falls back to `git config user.name`, which CI has no value for.
-    run(resolve(work, 'node_modules/.bin/busy-create-app'), ['defaults', '--author', APP_AUTHOR], {
+    run(resolve(work, 'node_modules/.bin/busy-create-app'), ['defaults', '--author', APP_AUTHOR, '--no-install'], {
       cwd: work,
       // Enter through every prompt; spare newlines are harmless.
       input: '\n'.repeat(8),

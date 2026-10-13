@@ -3,7 +3,7 @@
 //
 //   pnpm create @busy-app/app [directory] [options]
 //
-// Asks for the app's id, name, description, author and API version, copies the template with those substituted, and initializes a git repository. Every prompt has a flag; anything not passed is asked for.
+// Asks for the app's id, name, description, author and API version, copies the template with those substituted, initializes a git repository and installs the dependencies. Every prompt has a flag; anything not passed is asked for.
 
 import { execFileSync } from 'node:child_process'
 import { createInterface } from 'node:readline'
@@ -89,6 +89,7 @@ const OPTIONS = {
   author: { type: 'string' },
   'api-version': { type: 'string' },
   'no-git': { type: 'boolean' },
+  'no-install': { type: 'boolean' },
   help: { type: 'boolean', short: 'h' },
 } as const
 
@@ -103,6 +104,7 @@ Options:
   --author <name>       author
   --api-version <x.y.z> minimum BUSY Bar HTTP API version the app needs (default: ${API_VERSION})
   --no-git              skip git init
+  --no-install          skip pnpm install
   -h, --help            show this
 
 Anything not passed is asked for at the prompt.
@@ -284,9 +286,22 @@ async function main() {
     }
   }
 
-  const where = dirName === '.' ? '' : `cd ${dirName}\n  `
   console.log(`\n${c.green('✔')} Created ${c.bold(appId)} in ${target}${git ? '' : c.dim(' (no git)')}`)
-  console.log(`\nNext:\n\n  ${where}pnpm install\n  pnpm build\n`)
+
+  let installed = false
+  if (!opts['no-install']) {
+    console.log('\nInstalling dependencies with pnpm\n')
+    try {
+      execFileSync('pnpm', ['install'], { cwd: target, stdio: ['ignore', 'inherit', 'inherit'] })
+      installed = true
+    } catch {
+      // The app is complete without its dependencies; the hint below leaves the install to the user.
+      console.log(c.red('\n✖ pnpm install failed, run it again once the cause is fixed'))
+    }
+  }
+
+  const where = dirName === '.' ? '' : `cd ${dirName}\n  `
+  console.log(`\nNext:\n\n  ${where}${installed ? '' : 'pnpm install\n  '}pnpm build\n`)
 
   return target
 }

@@ -6,7 +6,7 @@ Scaffolds a JavaScript app for the BUSY Bar. One app, one repository.
 pnpm create @busy-app/app my-app
 ```
 
-The generator asks for the app's id, display name, description, author and minimum API version, writes the template with those filled in, and runs `git init` unless told not to.
+The generator asks for the app's id, display name, description, author and minimum API version, writes the template with those filled in, then runs `git init` and `pnpm install` unless told not to.
 
 Every prompt has a flag:
 
@@ -16,7 +16,7 @@ busy-create-app my-app --id app.example.my_app --name "My App" --description "..
 
 Anything left out is asked for. `--help` lists the flags.
 
-`--no-git` leaves the repository out, for scaffolding into a workspace that already has one.
+`--no-git` leaves the repository out, for scaffolding into a workspace that already has one. `--no-install` leaves the dependencies uninstalled. A failed install does not undo the app: the generator reports it and leaves `pnpm install` to you.
 
 ### App ids
 
