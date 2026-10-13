@@ -5,7 +5,5 @@
   "version": "0.1.0",
   "api_version": "{{apiVersion}}",
   "description": "{{description}}",
-  "author": "{{author}}",
-  "heap_size_kib": 128,
-  "debug": false
+  "author": "{{author}}"
 }
