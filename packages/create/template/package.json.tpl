@@ -6,7 +6,7 @@
   "author": "{{author}}",
   "type": "module",
   "scripts": {
-    "typecheck": "tsc -b",
+    "typecheck": "tsc",
     "build": "busy-cli build"
   },
   "engines": {

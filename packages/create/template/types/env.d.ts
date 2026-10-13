@@ -1,5 +1,3 @@
-/// <reference types="vite/client" />
-
 /** BUSY Bar address the app connects to, set at build time with `busy-cli build --addr`; `localhost` by default, the device the app runs on. */
 declare const __BUSY_ADDR__: string
 

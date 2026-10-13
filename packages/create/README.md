@@ -34,7 +34,7 @@ my-app/
 │   ├── animations/
 │   └── sounds/
 ├── shared/                app-level helpers, imported as @shared/*
-└── tsconfig*.json
+└── tsconfig.json
 ```
 
 `src/` is the app, and the build scans it only. `shared/` holds the helpers an app needs but a library cannot provide: the device client, the settings reader and a few date wrappers.
