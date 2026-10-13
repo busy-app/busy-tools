@@ -19,7 +19,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { relative, resolve } from 'node:path'
+import { basename, relative, resolve } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { build as viteBuild } from 'vite'
 import { appDir, appmetaDir, outRoot } from './paths.js'
@@ -30,7 +30,26 @@ import { buildViteConfig } from './viteConfig.js'
 type Manifest = {
   id: string
   version: string
+  api_version: string
   name: string
+}
+
+/** Manifest fields an archive name may refer to, as `{id}` and `{version}`. */
+const NAME_FIELDS = ['id', 'version'] as const
+
+/** Fills the placeholders of an archive name in from the manifest; throws on an unknown placeholder or a name that is a path. */
+function archiveName(pattern: string, manifest: Manifest): string {
+  const name = pattern.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const field = NAME_FIELDS.find((f) => f === key)
+    if (!field) {
+      throw new Error(`--tgz-name: unknown placeholder {${key}}, the known ones are ${NAME_FIELDS.map((f) => `{${f}}`).join(', ')}`)
+    }
+    return manifest[field]
+  })
+  if (name !== basename(name)) {
+    throw new Error(`--tgz-name is a file name, not a path: ${name}\nSet the directory with --out.`)
+  }
+  return name
 }
 
 /** Validates the manifest against the spec; throws on violation. */
@@ -47,6 +66,9 @@ function validateManifest(path: string): Manifest {
   }
   if (!/^\d+\.\d+\.\d+$/.test(manifest.version ?? '')) {
     throw new Error('manifest.version must be semver, e.g. "1.0.0"')
+  }
+  if (!/^\d+\.\d+\.\d+$/.test(manifest.api_version ?? '')) {
+    throw new Error('manifest.api_version is required and must be semver, e.g. "27.12.0": the minimum BUSY Bar HTTP API version the app needs')
   }
   if (typeof manifest.name !== 'string' || manifest.name === '') {
     throw new Error('manifest.name is required')
@@ -110,15 +132,17 @@ export type Options = {
   addr?: string
   minify?: boolean
   bundle?: boolean
-  /** Pack into `<id>.tgz`, keeping the folder. */
+  /** Pack into a .tgz, keeping the folder. */
   tgz?: boolean
-  /** Pack into `<id>.tgz` and drop the folder. Not to be combined with `tgz`. */
+  /** Pack into a .tgz and drop the folder. Not to be combined with `tgz`. */
   tgzOnly?: boolean
+  /** Archive file name; `{id}` and `{version}` are filled in from the manifest. */
+  tgzName?: string
 }
 
 /** Builds the app at `root`, returning the package folder or, when packing, the archive. */
 export async function build(root: string, opts: Options = {}): Promise<string> {
-  const { out, addr = DEFAULT_ADDR, minify = true, bundle = false, tgz = false, tgzOnly = false } = opts
+  const { out, addr = DEFAULT_ADDR, minify = true, bundle = false, tgz = false, tgzOnly = false, tgzName = '{id}.tgz' } = opts
 
   const destDir = outRoot(root, out)
   const manifest = validateManifest(resolve(appmetaDir(root), 'manifest.json'))
@@ -126,6 +150,8 @@ export async function build(root: string, opts: Options = {}): Promise<string> {
   if (addr !== DEFAULT_ADDR) console.log(`  addr: ${addr}`)
 
   const outDir = resolve(destDir, manifest.id)
+  // Resolved before the build, so a bad name fails at once.
+  const archive = resolve(destDir, archiveName(tgzName, manifest))
 
   // vite empties only scripts/, so clear the whole package folder here.
   rmSync(outDir, { recursive: true, force: true })
@@ -157,7 +183,6 @@ export async function build(root: string, opts: Options = {}): Promise<string> {
   let result = outDir
 
   if (tgz || tgzOnly) {
-    const archive = resolve(destDir, `${manifest.id}.tgz`)
     // Packed from destDir so the archive holds the <id>/ folder itself.
     execFileSync('tar', ['-czf', archive, '-C', destDir, manifest.id], { stdio: 'inherit' })
     if (tgzOnly) rmSync(outDir, { recursive: true, force: true })
