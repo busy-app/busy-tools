@@ -3,7 +3,7 @@
 //
 //   pnpm create @busy-app/app [directory] [options]
 //
-// Asks for the app's id, name, description and author, copies the template with those substituted, and initializes a git repository. Every prompt has a flag; anything not passed is asked for.
+// Asks for the app's id, name, description, author and API version, copies the template with those substituted, and initializes a git repository. Every prompt has a flag; anything not passed is asked for.
 
 import { execFileSync } from 'node:child_process'
 import { createInterface } from 'node:readline'
@@ -42,6 +42,10 @@ const c = {
 const ID_RE = /^[a-zA-Z0-9._]+$/
 /** Longest id the manifest accepts. */
 const ID_MAX = 32
+
+/** The minimum BUSY Bar HTTP API version a new app asks for by default. */
+const API_VERSION = '27.12.0'
+const API_VERSION_RE = /^\d+\.\d+\.\d+$/
 
 /** Placeholder namespace, meant to be replaced before publishing. */
 const NAMESPACE = 'app.example'
@@ -83,6 +87,7 @@ const OPTIONS = {
   name: { type: 'string' },
   description: { type: 'string' },
   author: { type: 'string' },
+  'api-version': { type: 'string' },
   'no-git': { type: 'boolean' },
   help: { type: 'boolean', short: 'h' },
 } as const
@@ -96,6 +101,7 @@ Options:
   --name <name>         display name
   --description <text>  one-line description
   --author <name>       author
+  --api-version <x.y.z> minimum BUSY Bar HTTP API version the app needs (default: ${API_VERSION})
   --no-git              skip git init
   -h, --help            show this
 
@@ -129,6 +135,7 @@ type Values = {
   description: string
   author: string
   packageName: string
+  apiVersion: string
 }
 
 /** Substitutes {{placeholders}}; an unknown one throws. */
@@ -186,7 +193,7 @@ async function main() {
    */
   type Field = {
     /** The flag that answers this prompt without asking. */
-    option: 'dir' | 'id' | 'name' | 'description' | 'author'
+    option: 'dir' | 'id' | 'name' | 'description' | 'author' | 'api-version'
     fallback?: string | undefined
     validate?: ((value: string) => string | null) | undefined
   }
@@ -248,6 +255,11 @@ async function main() {
     fallback: gitAuthor(),
     validate: (v) => (v ? null : 'an author is required'),
   })
+  const apiVersion = await ask('API version', {
+    option: 'api-version',
+    fallback: API_VERSION,
+    validate: (v) => (API_VERSION_RE.test(v) ? null : `expected x.y.z, e.g. ${API_VERSION}`),
+  })
   // Not asked for: the app is private, so the folder name will do.
   const packageName = packageNameFor(dirName)
 
@@ -256,7 +268,7 @@ async function main() {
   // Undo a copy that fails partway, rather than leave a half-written app.
   const preexisting = existsSync(target)
   try {
-    copyTemplate(TEMPLATE, target, { appId, appName, description, author, packageName })
+    copyTemplate(TEMPLATE, target, { appId, appName, description, author, packageName, apiVersion })
   } catch (err) {
     if (!preexisting) rmSync(target, { recursive: true, force: true })
     throw err

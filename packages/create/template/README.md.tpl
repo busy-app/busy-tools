@@ -61,6 +61,7 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 | `pnpm build --out <path>` | builds into `<path>` instead |
 | `pnpm build --tgz` | also packs the package into a `.tgz` beside it |
 | `pnpm build --tgz-only` | packs the `.tgz` and leaves nothing else |
+| `pnpm build --tgz --tgz-name <name>` | names the `.tgz`, e.g. `"{id}-{version}.tgz"` |
 | `pnpm build --no-minify` | readable output, for debugging |
 | `pnpm build --bundle` | inlines every module into one `main.js` |
 | `pnpm build --addr <host>` | sets the BUSY Bar address the app connects to, `localhost` by default |
@@ -78,7 +79,11 @@ dist/
     └── images/ animations/ sounds/ resources/
 ```
 
-`--tgz` packs that folder into `dist/{{appId}}.tgz`, with the folder itself at the root of the archive.
+`--tgz` packs that folder into `dist/{{appId}}.tgz`, with the folder itself at the root of the archive. `--tgz-name` gives the archive another name; `{id}` and `{version}` in it are filled in from the manifest.
+
+## Releasing
+
+Pushing a tag equal to the manifest `version`, e.g. `0.1.0`, builds the app and attaches `{{appId}}-<version>.tgz` to a GitHub release. The release notes open with the app's name, id, version and API version. The release fails when the tag differs from the manifest `version`.
 
 ## Manifest
 
@@ -90,6 +95,7 @@ dist/
 | `id` | up to 32 characters — required |
 | `name` | display name — required |
 | `version` | semver, e.g. `1.0.0` — required |
+| `api_version` | minimum BUSY Bar HTTP API version the app needs, e.g. `27.12.0` — required |
 | `description`, `author` | free form, default `""` |
 | `heap_size_kib` | memory for the app heap, 1–256, default 32 |
 | `debug` | when true, shown only in developer mode, default false |

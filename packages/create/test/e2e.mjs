@@ -89,6 +89,8 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     assert.equal(manifest.name, APP_NAME)
     assert.equal(manifest.description, APP_DESCRIPTION)
     assert.equal(manifest.author, APP_AUTHOR)
+    // Not passed, so the generator's default.
+    assert.match(manifest.api_version, /^\d+\.\d+\.\d+$/)
 
     // Not asked for: the package is private, so the name comes from the folder.
     const pkg = JSON.parse(readFileSync(resolve(appDir, 'package.json'), 'utf8'))
@@ -231,6 +233,17 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     assert.ok(!existsSync(resolve(dist, APP_ID)), '--tgz-only left the folder behind')
   })
 
+  test('names the tgz with --tgz-name', () => {
+    run('pnpm', ['build', '--tgz-only', '--tgz-name', '{id}-{version}.tgz'], { cwd: appDir })
+    const manifest = JSON.parse(readFileSync(resolve(appDir, 'src/appmeta/manifest.json'), 'utf8'))
+    const archive = `${APP_ID}-${manifest.version}.tgz`
+
+    assert.ok(existsSync(resolve(appDir, 'dist', archive)), `${archive} is missing`)
+    // The name changes, the folder inside does not.
+    const listing = run('tar', ['-tzf', resolve(appDir, 'dist', archive)])
+    assert.match(listing, new RegExp(`^${APP_ID}/scripts/main\\.js$`, 'm'))
+  })
+
   test('rejects an id longer than 32 characters', () => {
     const tooLong = `app.example.${'x'.repeat(32)}`
     assert.throws(
@@ -251,6 +264,28 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
           input: '',
         }),
       /dot and underscore/,
+    )
+  })
+
+  test('takes the API version from --api-version', () => {
+    const dir = resolve(work, 'api')
+    run(
+      resolve(work, 'node_modules/.bin/busy-create-app'),
+      ['api', '--id', 'app.example.api', '--name', 'Api', '--description', 'd', '--author', APP_AUTHOR, '--api-version', '1.2.3', '--no-git'],
+      { cwd: work, input: '' },
+    )
+    const manifest = JSON.parse(readFileSync(resolve(dir, 'src/appmeta/manifest.json'), 'utf8'))
+    assert.equal(manifest.api_version, '1.2.3')
+  })
+
+  test('rejects a malformed --api-version', () => {
+    assert.throws(
+      () =>
+        run(resolve(work, 'node_modules/.bin/busy-create-app'), ['bad-api', '--api-version', '27.12'], {
+          cwd: work,
+          input: '',
+        }),
+      /x\.y\.z/,
     )
   })
 

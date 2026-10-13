@@ -6,12 +6,12 @@ Scaffolds a JavaScript app for the BUSY Bar. One app, one repository.
 pnpm create @busy-app/app my-app
 ```
 
-The generator asks for the app's id, display name, description and author, writes the template with those filled in, and runs `git init` unless told not to.
+The generator asks for the app's id, display name, description, author and minimum API version, writes the template with those filled in, and runs `git init` unless told not to.
 
 Every prompt has a flag:
 
 ```sh
-busy-create-app my-app --id app.example.my_app --name "My App" --description "..." --author "..."
+busy-create-app my-app --id app.example.my_app --name "My App" --description "..." --author "..." --api-version 27.12.0
 ```
 
 Anything left out is asked for. `--help` lists the flags.
@@ -41,7 +41,7 @@ my-app/
 
 Layout, fonts and XPM2 come from `@busy-app/busy-lib`; the build itself from `@busy-app/cli`.
 
-`pnpm build` produces the package in `dist/<id>/`, named after the manifest id; `--out <path>` puts it elsewhere, and `--tgz` packs it into `<id>.tgz` alongside.
+`pnpm build` produces the package in `dist/<id>/`, named after the manifest id; `--out <path>` puts it elsewhere, and `--tgz` packs it into `<id>.tgz` alongside, or under the name given with `--tgz-name`.
 
 ## Working on the generator
 
@@ -56,7 +56,7 @@ Two conventions in `template/` work around npm, which strips `.gitignore` from p
 - `_gitignore` is renamed to `.gitignore` on copy
 - `*.tpl` files carry `{{placeholders}}`; the suffix is dropped on copy
 
-Placeholders are `appId`, `appName`, `description`, `author` and `packageName`. An unknown one fails the build.
+Placeholders are `appId`, `appName`, `description`, `author`, `packageName` and `apiVersion`. An unknown one fails the build.
 
 ### Trying it locally
 
