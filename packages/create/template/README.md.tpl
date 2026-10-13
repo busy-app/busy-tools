@@ -70,6 +70,12 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 | `pnpm build --bundle` | inlines every module into one `main.js` |
 | `pnpm build --addr <host>` | sets the BUSY Bar address the app connects to, `localhost` by default |
 | `pnpm typecheck` | type-checks the app |
+| `pnpm app:install` | installs `dist/{{appId}}.tgz` on the BUSY Bar; build it first with `pnpm build --tgz` |
+| `pnpm app:uninstall` | removes the app from the BUSY Bar, keeping its settings |
+| `pnpm app:run` | launches the installed app |
+| `pnpm app:stop` | quits the running app |
+
+The four `app:` commands talk to the BUSY Bar connected over USB. For one on Wi-Fi add `--addr <host>`, and `--password <password>` if it is protected: `pnpm app:install --addr 192.168.1.50`.
 
 ## Build output
 
