@@ -11,15 +11,15 @@ pnpm install
 pnpm build
 ```
 
-The app's id is `{{appId}}`, set in `src/appmeta/manifest.json`. An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dot and underscore. If yours still says `app.example`, change it to your own namespace before publishing.
+The app's id is `{{appId}}`, set in `src/appmeta/manifest.json`. An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dots, and underscores. If yours still says `app.example`, change it to your own namespace before publishing.
 
 ## Layout
 
 `src/` is the app — everything in it is yours to edit.
 
-The entry point is `src/main.ts` (or `src/main.js`). The name is fixed: the build turns it into `scripts/main.js`, the one file the BUSY Bar starts.
+The entry point is `src/main.ts` (or `src/main.js`). The name is fixed: the build turns it into `scripts/main.js`, the file the BUSY Bar starts. Any imported modules are emitted as separate files alongside it in `scripts/`, unless `pnpm build --bundle` inlines them.
 
-`src/main.ts` is run from top to bottom, not imported: it starts the app by calling `main()` at its end and must not export anything. The modules it imports export as usual.
+`src/main.ts` is run from top to bottom, not imported: it starts the app by calling `main()` at the end and must not export anything. Imported modules can use standard exports.
 
 ```
 my-app/
@@ -28,8 +28,8 @@ my-app/
 │   ├── appmeta/
 │   │   ├── manifest.json         id, name, version
 │   │   ├── settings.json         the settings screen — optional
-│   │   ├── icon_front_8x8.png    front icon, 8×8 colour — optional
-│   │   └── icon_back_11x11.png   back icon, 11×11 greyscale — optional
+│   │   ├── icon_front_8x8.png    front icon, 8×8 color — optional
+│   │   └── icon_back_11x11.png   back icon, 11×11 grayscale — optional
 │   ├── images/
 │   ├── animations/
 │   └── sounds/
@@ -42,7 +42,7 @@ Both icons are optional; without them a default is used.
 
 Anything in `src/` that isn't a source file is copied into the package, sorted by what the BUSY Bar can read:
 
-| Extension | Goes to |
+| Extension | Destination |
 | --- | --- |
 | `.png` `.image` | `images/` |
 | `.anim` | `animations/` |
@@ -51,7 +51,7 @@ Anything in `src/` that isn't a source file is copied into the package, sorted b
 
 A file in `src/images`, `src/animations` or `src/sounds` keeps its folder as long as the BUSY Bar reads its format.
 
-`images/`, `animations/` and `sounds/` hold only those formats. An image, animation or sound in another one — `.jpg`, `.gif`, `.svg`, `.wav`, `.mp3` and the like — goes to `resources/`, and the build warns that the device cannot read it.
+`images/`, `animations/` and `sounds/` hold only those formats. An image, animation or sound in another format — `.jpg`, `.gif`, `.svg`, `.wav`, `.mp3` and the like — goes to `resources/`, and the build warns that the device cannot read it.
 
 Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`: build a tree out of `row` / `column` / `stack`, hand it to `render()`, and send the result with `device.DisplayDraw()`. The screen is 72×16 pixels.
 
@@ -61,11 +61,11 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 
 ## Commands
 
-| Command | What it does |
+| Command | Description |
 | --- | --- |
 | `pnpm build` | empties `dist/` and builds the package into it |
 | `pnpm build --out <path>` | builds into `<path>` instead, replacing only this app's package there |
-| `pnpm build --tgz` | also packs the package into a `.tgz` beside it |
+| `pnpm build --tgz` | also packs the package into a `.tgz` alongside it |
 | `pnpm build --tgz-only` | packs the `.tgz` and leaves nothing else |
 | `pnpm build --tgz --tgz-name <name>` | names the `.tgz`, e.g. `"{id}-{version}.tgz"` |
 | `pnpm build --no-minify` | readable output, for debugging |
@@ -77,7 +77,12 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 | `pnpm app:run` | launches the installed app |
 | `pnpm app:stop` | quits the running app |
 
-The four `app:` commands talk to the BUSY Bar connected over USB. For one on Wi-Fi add `--addr <host>`, and `--password <password>` if it is protected: `pnpm app:install --addr 192.168.1.50`.
+The four `app:` commands talk to the BUSY Bar connected over USB. For a device connected over Wi-Fi, pass `--addr <host>` with its network IP address or hostname, and `--password <password>` if password protection is enabled:
+
+```sh
+pnpm app:install --addr <host>
+pnpm app:install --addr <host> --password <password>
+```
 
 ## Build output
 
@@ -91,17 +96,17 @@ dist/
     └── images/ animations/ sounds/ resources/
 ```
 
-`--tgz` packs that folder into `dist/{{appId}}.tgz`, with the folder itself at the root of the archive. `--tgz-name` gives the archive another name; `{id}` and `{version}` in it are filled in from the manifest.
+`--tgz` packs that folder into `dist/{{appId}}.tgz`, with the folder itself at the root of the archive. `--tgz-name` gives the archive another name; `{id}` and `{version}` in it are replaced with the manifest values.
 
 ## Releasing
 
-Pushing a tag equal to the manifest `version`, e.g. `0.1.0`, builds the app and attaches `{{appId}}-<version>.tgz` to a GitHub release. The release notes open with the app's name, id, version and API version. The release fails when the tag differs from the manifest `version`.
+Pushing a git tag matching the manifest `version` (e.g. `0.1.0`) builds the app and attaches `{{appId}}-<version>.tgz` to a GitHub release. The release notes open with the app's name, id, version and API version. The release fails when the tag differs from the manifest `version`.
 
 ## Manifest
 
 `src/appmeta/manifest.json` carries the app's identity and a couple of knobs:
 
-| Field | |
+| Field | Description |
 | --- | --- |
 | `format_version` | manifest format, `1` — required |
 | `id` | up to 32 characters — required |
