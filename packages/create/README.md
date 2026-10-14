@@ -14,34 +14,38 @@ Every prompt has a flag:
 busy-create-app my-app --author "Jane Doe" --id app.jane_doe.my_app --name "My App" --description "..." --api-version 27.12.0
 ```
 
-Anything left out is asked for. `--help` lists the flags.
+Any omitted option will be prompted interactively. `--help` lists the flags.
 
-`--no-git` leaves the repository out, for scaffolding into a workspace that already has one. `--no-install` leaves the dependencies uninstalled. A failed install does not undo the app: the generator reports it and leaves `pnpm install` to you.
+`--no-git` skips initializing a git repository, for scaffolding into a workspace that already has one. `--no-install` skips installing dependencies. A failed install does not remove the scaffolded app: the generator reports the error and leaves `pnpm install` to you.
 
-### App ids
+### App IDs
 
-An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dot and underscore. The default namespace is `app.<author>`, made from the author's name: "Jane Doe" gives `app.jane_doe`. A name with no Latin letters or digits, or one too long to fit, leaves `app.example` — a placeholder to replace with your own before publishing.
+An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dots, and underscores. The default namespace is `app.<author>`, made from the author's name: "Jane Doe" gives `app.jane_doe`. A name with no Latin letters or digits, or one too long to fit, falls back to `app.example` — a placeholder to replace with your own namespace before publishing.
 
 ## What you get
 
 ```
 my-app/
-├── src/                   the app
-│   ├── main.ts            the entry point: function main(), called at the end
-│   ├── appmeta/
-│   │   └── manifest.json  id, name, version
-│   ├── images/
-│   ├── animations/
-│   └── sounds/
-├── shared/                app-level helpers, imported as @shared/*
-└── tsconfig.json
+├── src/                     the app
+│   ├── main.ts              the entry point: function main(), called at the end
+│   └── appmeta/
+│       └── manifest.json    id, name, version, api_version
+├── shared/                  app-level helpers, imported as @shared/*
+├── types/env.d.ts           globals the device and the build provide
+├── .github/workflows/       CI, and a release on every version tag
+├── package.json
+├── tsconfig.json
+├── .nvmrc
+└── README.md
 ```
 
-`src/` is the app, and the build scans it only. Its entry point has to be `src/main.ts` or `src/main.js`: the build emits it as `scripts/main.js`, the name the firmware starts. `shared/` holds the helpers an app needs but a library cannot provide: the device client, the settings reader and a few date wrappers.
+Resources go into `src/images/`, `src/animations/` and `src/sounds/`, created as the app needs them.
+
+`src/` is the app, and the build scans only this folder. Its entry point has to be `src/main.ts` or `src/main.js`: the build emits it as `scripts/main.js`, the file the firmware starts, with the modules it imports alongside it. `shared/` holds the helpers an app needs but a library cannot provide: the device client, the settings reader and a few date wrappers.
 
 Layout, fonts and XPM2 come from `@busy-app/busy-lib`; the build itself from `@busy-app/cli`.
 
-`pnpm build` produces the package in `dist/<id>/`, named after the manifest id; `--out <path>` puts it elsewhere, and `--tgz` packs it into `<id>.tgz` alongside, or under the name given with `--tgz-name`.
+`pnpm build` empties `dist/` and produces the package in `dist/<id>/`, named after the manifest id; `--out <path>` puts it elsewhere, and `--tgz` packs it into `<id>.tgz` alongside, or under the name given with `--tgz-name`. `pnpm app:install`, `app:uninstall`, `app:run` and `app:stop` manage the app on a connected BUSY Bar. The generated app's README covers both topics, and [`@busy-app/cli`](../cli) has the details.
 
 ## Working on the generator
 
@@ -53,10 +57,10 @@ test/e2e.mjs    packs, scaffolds, installs, type-checks and builds (node:test)
 
 Two conventions in `template/` work around npm, which strips `.gitignore` from packages and misreads a nested `package.json`:
 
-- `_gitignore` is renamed to `.gitignore` on copy
-- `*.tpl` files carry `{{placeholders}}`; the suffix is dropped on copy
+- `_gitignore` is renamed to `.gitignore` when copied
+- `*.tpl` files carry `{{placeholders}}`; the suffix is dropped when copied
 
-Placeholders are `appId`, `appName`, `description`, `author`, `packageName` and `apiVersion`. An unknown one fails the build.
+Placeholders are `appId`, `appName`, `description`, `author`, `packageName` and `apiVersion`. Any unrecognized placeholder causes the build to fail.
 
 ### Trying it locally
 
@@ -66,8 +70,8 @@ pnpm link --global                        # then: busy-create-app my-app
 pnpm test                                 # the full path, through a real tarball
 ```
 
-Only `pnpm test` catches files missing from the published package, so run it before releasing. It builds a generated app, so it needs that app's Node version — `fnm use` (or `nvm use`) reads it from `.nvmrc`. It installs with `--engine-strict`, so a wrong version fails immediately. The generator itself runs on Node 20 and up.
+Only `pnpm test` catches files missing from the published package, so run it before releasing. It builds a generated app, so it needs that app's Node version — `fnm use` (or `nvm use`) reads it from `.nvmrc`. It installs with `--engine-strict`, so an incorrect version fails immediately. The generator itself runs on Node 20 and up.
 
 ## Versions
 
-`template/package.json.tpl` pins the ranges a generated app gets for `@busy-app/busy-lib` and `@busy-app/cli`. On a `0.x` release neither range picks up the new minor, so raise it here and release the template alongside.
+`template/package.json.tpl` pins the ranges a generated app gets for `@busy-app/busy-lib` and `@busy-app/cli`. On a `0.x` release, neither range automatically picks up the new minor version, so bump them here and release the template alongside.
