@@ -2,23 +2,22 @@
 
 Tooling for building JavaScript apps for the [BUSY Bar](https://busy.bar).
 
-| Package                                 | What it is                                                    |
-| --------------------------------------- | ------------------------------------------------------------- |
-| [`@busy-app/cli`](packages/cli)         | `busy-cli` — builds an app into a device package              |
-| [`@busy-app/create-app`](packages/create) | `pnpm create @busy-app/app` — scaffolds a new app            |
+| Package                                   | Description                                                                    |
+| ----------------------------------------- | ------------------------------------------------------------------------------ |
+| [`@busy-app/cli`](packages/cli)           | `busy-cli` — builds an app into a device package and installs it on a BUSY Bar |
+| [`@busy-app/create-app`](packages/create) | `pnpm create @busy-app/app` — scaffolds a new app                              |
 
 ## Getting started
 
 ```sh
 pnpm create @busy-app/app my-app
 cd my-app
-pnpm install
 pnpm build
 ```
 
 ## Developing this repository
 
-Requires Node 22 or 24 and pnpm.
+Requires Node.js 22 or 24, and pnpm.
 
 ```sh
 pnpm install
@@ -27,7 +26,7 @@ pnpm typecheck
 pnpm test
 ```
 
-Changes that should be released carry a changeset:
+Changes intended for release must include a changeset:
 
 ```sh
 pnpm changeset
