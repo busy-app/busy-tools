@@ -23,7 +23,7 @@ export interface RequestOptions {
 
 /** Pulls `--addr <host>` and `--password <password>` out of the arguments, returning the device to talk to and the arguments left over. */
 export function takeDevice(args: string[]): { device: Device; rest: string[] } {
-  const addr = takeOption(args, '--addr', 'a host, e.g. --addr 192.168.1.50')
+  const addr = takeOption(args, '--addr', 'a host (e.g. its IP on Wi-Fi)')
   const password = takeOption(addr.rest, '--password', 'the "Password protection" password set on the BUSY Bar')
 
   return {

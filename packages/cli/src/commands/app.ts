@@ -25,9 +25,9 @@ ${helpRow('--addr <host>', `BUSY Bar address ${c.dim(`(default: ${DEFAULT_ADDR},
 ${helpRow('--password <password>', 'the password from "Password protection", only needed over Wi-Fi (see below)')}
 
 ${c.bold('Connecting:')}
-  Over USB the BUSY Bar needs no password. Its address there is ${DEFAULT_ADDR} unless it was changed, in that case pass it with ${c.cyan('--addr')}.
-  Over Wi-Fi pass its IP with ${c.cyan('--addr')}. Whether that works is set in the "HTTP API" section of the BUSY Bar web UI, under "Over Wi-Fi":
-    HTTP API access off        every request over Wi-Fi is refused, use USB
+  Over USB the BUSY Bar needs no password. Its address there is ${DEFAULT_ADDR} unless it was changed, in that case pass it with ${c.cyan('--addr <host>')}.
+  Over Wi-Fi pass its IP address or hostname with ${c.cyan('--addr <host>')}. Whether that works is set in the "HTTP API" section of the BUSY Bar web UI, under "Over Wi-Fi":
+    HTTP API access off        every request over Wi-Fi is refused; use USB
     HTTP API access on         works as is
     Password protection on     pass that password with ${c.cyan('--password')}
 `
