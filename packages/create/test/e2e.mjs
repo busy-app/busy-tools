@@ -101,10 +101,10 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
       assert.ok(existsSync(resolve(appDir, file)), `${file} is missing`)
     }
 
-    // grep exits 1 when it finds nothing — the outcome this test wants.
+    // grep exits 1 when it finds nothing — the outcome this test wants. node_modules/ is the generator's install, not the template.
     let left = ''
     try {
-      left = execFileSync('grep', ['-rlE', '(^|[^$])\\{\\{', appDir], { encoding: 'utf8' }).trim()
+      left = execFileSync('grep', ['-rlE', '--exclude-dir=node_modules', '(^|[^$])\\{\\{', appDir], { encoding: 'utf8' }).trim()
     } catch (err) {
       if (err.status !== 1) throw err
     }
