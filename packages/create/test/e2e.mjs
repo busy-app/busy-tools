@@ -261,7 +261,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     const tooLong = `app.example.${'x'.repeat(32)}`
     assert.throws(
       () =>
-        run(resolve(work, 'node_modules/.bin/busy-create-app'), ['long', '--id', tooLong], {
+        run(resolve(work, 'node_modules/.bin/busy-create-app'), ['long', '--author', APP_AUTHOR, '--id', tooLong], {
           cwd: work,
           input: '',
         }),
@@ -272,7 +272,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
   test('rejects a dash in the id', () => {
     assert.throws(
       () =>
-        run(resolve(work, 'node_modules/.bin/busy-create-app'), ['dashed', '--id', 'app.example.my-app'], {
+        run(resolve(work, 'node_modules/.bin/busy-create-app'), ['dashed', '--author', APP_AUTHOR, '--id', 'app.example.my-app'], {
           cwd: work,
           input: '',
         }),
@@ -294,7 +294,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
   test('rejects a malformed --api-version', () => {
     assert.throws(
       () =>
-        run(resolve(work, 'node_modules/.bin/busy-create-app'), ['bad-api', '--api-version', '27.12'], {
+        run(resolve(work, 'node_modules/.bin/busy-create-app'), ['bad-api', '--author', APP_AUTHOR, '--api-version', '27.12'], {
           cwd: work,
           input: '',
         }),
