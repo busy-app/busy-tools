@@ -4,6 +4,10 @@ Scaffolds a JavaScript app for the BUSY Bar. One app, one repository.
 
 ```sh
 pnpm create @busy-app/app my-app
+cd my-app
+pnpm build/tgz     # build the app and pack it into dist/<id>.tgz
+pnpm app:install   # install it on the BUSY Bar connected over USB
+pnpm app:run       # launch the installed app
 ```
 
 The generator asks for the app's author, id, display name, description and minimum API version, writes the template with those filled in, then runs `git init` and `pnpm install` unless told not to.
@@ -45,7 +49,7 @@ Resources go into `src/images/`, `src/animations/` and `src/sounds/`, created as
 
 Layout, fonts and XPM2 come from `@busy-app/busy-lib`; the build itself from `@busy-app/cli`.
 
-`pnpm build` empties `dist/` and produces the package in `dist/<id>/`, named after the manifest id; `--out <path>` puts it elsewhere, and `--tgz` packs it into `<id>.tgz` alongside, or under the name given with `--tgz-name`. `pnpm app:install`, `app:uninstall`, `app:run` and `app:stop` manage the app on a connected BUSY Bar. The generated app's README covers both topics, and [`@busy-app/cli`](../cli) has the details.
+`pnpm build` empties `dist/` and produces the package in `dist/<id>/`, named after the manifest id; `--out <path>` puts it elsewhere, and `--tgz` packs it into `<id>.tgz` alongside, or under the name given with `--tgz-name`; `pnpm build/tgz` is `pnpm build --tgz`. `pnpm app:install`, `app:uninstall`, `app:run` and `app:stop` manage the app on a connected BUSY Bar. The generated app's README covers both topics, and [`@busy-app/cli`](../cli) has the details.
 
 ## Working on the generator
 
