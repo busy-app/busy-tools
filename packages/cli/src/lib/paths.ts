@@ -15,6 +15,8 @@
 //   ├── appmeta/
 //   └── images/            ← resources; only images/, animations/, sounds/ and resources/ are taken
 //
+// In either shape, the entry point may sit in scripts/ instead, as in the package the firmware runs: scripts/main.ts or scripts/main.js.
+//
 // The app directory is the only thing that varies per project; everything else is derived from it.
 
 import { existsSync } from 'node:fs'
@@ -69,11 +71,14 @@ export function outRoot({ root }: Project, override?: string): string {
   return isAbsolute(path) ? path : resolve(root, path)
 }
 
-/** App entry point: main.ts or main.js in the app directory. Returns the path, or null. */
+/** Where the entry point may sit in the app directory: beside appmeta/, or in scripts/ as in the package the firmware runs. */
+export const ENTRY_PATHS = ['main.ts', 'main.js', 'scripts/main.ts', 'scripts/main.js']
+
+/** App entry point: one of ENTRY_PATHS in the app directory. Returns the path, or null; more than one is an error, since only one of them can become scripts/main.js. */
 export function findEntry({ app }: Project): string | null {
-  for (const name of ['main.ts', 'main.js']) {
-    const path = resolve(app, name)
-    if (existsSync(path)) return path
+  const found = ENTRY_PATHS.filter((name) => existsSync(resolve(app, name)))
+  if (found.length > 1) {
+    throw new Error(`${app} has more than one entry point: ${found.join(', ')}.\nKeep one of them: the build turns it into scripts/main.js.`)
   }
-  return null
+  return found[0] ? resolve(app, found[0]) : null
 }

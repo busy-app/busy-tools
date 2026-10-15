@@ -1,9 +1,9 @@
 // Vite config, built in code instead of read from a file in the project — busy-cli owns the build, projects only hold sources.
 
-import { basename, extname, relative, resolve, sep } from 'node:path'
+import { basename, dirname, extname, relative, resolve, sep } from 'node:path'
 import type { InlineConfig, Plugin } from 'vite'
 import { fontMaps } from './fontMapsPlugin.js'
-import { findEntry, type Project } from './paths.js'
+import { ENTRY_PATHS, findEntry, type Project } from './paths.js'
 
 export type BuildOptions = {
   /** Where the package is assembled; the bundle lands in its `scripts/`. */
@@ -37,8 +37,10 @@ export function buildViteConfig(project: Project, { outDir, addr, minify, bundle
   const { root, app } = project
   const entry = findEntry(project)
   if (!entry) {
-    throw new Error(`build: ${app} has neither main.ts nor main.js`)
+    throw new Error(`build: ${app} has no entry point.\nAdd one of ${ENTRY_PATHS.join(', ')}.`)
   }
+  // Modules beside an entry in scripts/ are named from there, as they sit in the package: scripts/time.ts → time.js, not scripts-time.js.
+  const entryDir = dirname(entry)
 
   return {
     root,
@@ -71,9 +73,9 @@ export function buildViteConfig(project: Project, { outDir, addr, minify, bundle
                   if (id === entry) return undefined
                   // Sources only; assets take their own path.
                   if (!/\.(ts|js)$/.test(id)) return undefined
-                  // The package keeps every script next to main.js, so the chunk name is the module's path under src/, flattened — file names alone would collide across folders:
+                  // The package keeps every script next to main.js, so the chunk name is the module's path under the app folder (or its scripts/), flattened — file names alone would collide across folders:
                   //   time.ts → time.js,  lib/format.ts → lib-format.js
-                  const path = relative(app, id)
+                  const path = relative(id.startsWith(entryDir + sep) ? entryDir : app, id)
                   return path.slice(0, -extname(path).length).split(sep).join('-')
                 },
               }),

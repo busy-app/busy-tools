@@ -34,7 +34,7 @@ With `src/`, the commands also work from inside `src/`. A folder with neither `s
 
 ### Entry point
 
-The entry point is `main.ts` or `main.js` in the app folder. The name is fixed: the build emits it as `scripts/main.js`, the file the BUSY Bar starts. Any imported modules are emitted as separate files alongside it in `scripts/`, unless `--bundle` inlines them.
+The entry point is `main.ts` or `main.js` in the app folder, or in its `scripts/`, the way the BUSY Bar keeps it: `scripts/main.ts` or `scripts/main.js`. Only one of the four may exist; if more than one is found, the build exits with an error. The name is fixed: the build emits it as `scripts/main.js`, the file the BUSY Bar starts. Any imported modules are emitted as separate files alongside it in `scripts/`, unless `--bundle` inlines them.
 
 The BUSY Bar executes that file directly without calling any exports, so the file must start the app itself and export nothing:
 
