@@ -24,6 +24,9 @@ import { parseArgs } from 'node:util'
 // Relative to dist/, where this file lands; template/ stays at the package root.
 const TEMPLATE = fileURLToPath(new URL('../template', import.meta.url))
 
+const PKG = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { name: string; version: string }
+const VERSION = `${PKG.name} ${PKG.version}`
+
 /** Files npm strips or misreads inside a published package. */
 const RENAME = new Map([['_gitignore', '.gitignore']])
 /** Files carrying {{placeholders}}; the suffix is dropped on copy. */
@@ -100,10 +103,13 @@ const OPTIONS = {
   'api-version': { type: 'string' },
   'no-git': { type: 'boolean' },
   'no-install': { type: 'boolean' },
+  version: { type: 'boolean', short: 'v' },
   help: { type: 'boolean', short: 'h' },
 } as const
 
 const USAGE = `
+${VERSION}
+
 Usage: busy-create-app [directory] [options]
 
 Options:
@@ -115,7 +121,8 @@ Options:
   --api-version <x.y.z> minimum BUSY Bar HTTP API version the app needs (default: ${API_VERSION})
   --no-git              skip git init
   --no-install          skip pnpm install
-  -h, --help            show this
+  -v, --version         show the version
+  -h, --help            show help
 
 Anything not passed is asked for at the prompt.
 `
@@ -195,6 +202,10 @@ async function main() {
     console.log(USAGE)
     return
   }
+  if (opts.version) {
+    console.log(VERSION)
+    return
+  }
 
   // A line iterator rather than readline/promises: question() resolves only once when stdin is a pipe, which breaks piped and CI runs.
   const rl = createInterface({ input: process.stdin })
@@ -235,7 +246,7 @@ async function main() {
     }
   }
 
-  console.log(`\n${c.bold('Creating a BUSY Bar JS app')}\n`)
+  console.log(`\n${c.dim(VERSION)}\n\n${c.bold('Creating a BUSY Bar JS app')}\n`)
 
   const dirName = await ask('Directory', {
     option: 'dir',
