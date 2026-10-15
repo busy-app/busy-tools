@@ -8,7 +8,9 @@ A JavaScript app for the BUSY Bar, generated from the BUSY JS app template.
 
 ```sh
 pnpm install
-pnpm build
+pnpm build/tgz     # build the app and pack it into dist/{{appId}}.tgz
+pnpm app:install   # install it on the BUSY Bar connected over USB
+pnpm app:run       # launch the installed app
 ```
 
 The app's id is `{{appId}}`, set in `src/appmeta/manifest.json`. An id is `<namespace>.<app>`, at most 32 characters, made of Latin letters, digits, underscores, dashes, and dots, and not starting with a dot. If yours still says `app.example`, change it to your own namespace before publishing.
@@ -65,14 +67,14 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 | --- | --- |
 | `pnpm build` | empties `dist/` and builds the package into it |
 | `pnpm build --out <path>` | builds into `<path>` instead, replacing only this app's package there |
-| `pnpm build --tgz` | also packs the package into a `.tgz` alongside it |
+| `pnpm build/tgz` | also packs the package into a `.tgz` alongside it; the same as `pnpm build --tgz` |
 | `pnpm build --tgz-only` | packs the `.tgz` and leaves nothing else |
 | `pnpm build --tgz --tgz-name <name>` | names the `.tgz`, e.g. `"{id}-{version}.tgz"` |
 | `pnpm build --no-minify` | readable output, for debugging |
 | `pnpm build --bundle` | inlines every module into one `main.js` |
 | `pnpm build --addr <host>` | sets the BUSY Bar address the app connects to, `localhost` by default |
 | `pnpm typecheck` | type-checks the app |
-| `pnpm app:install` | installs `dist/{{appId}}.tgz` on the BUSY Bar; build it first with `pnpm build --tgz` |
+| `pnpm app:install` | installs `dist/{{appId}}.tgz` on the BUSY Bar; build it first with `pnpm build/tgz` |
 | `pnpm app:uninstall` | removes the app from the BUSY Bar, keeping its settings |
 | `pnpm app:run` | launches the installed app |
 | `pnpm app:stop` | quits the running app |

@@ -8,6 +8,7 @@
   "scripts": {
     "typecheck": "tsc",
     "build": "busy-cli build",
+    "build/tgz": "busy-cli build --tgz",
     "app:install": "busy-cli app install",
     "app:uninstall": "busy-cli app uninstall",
     "app:run": "busy-cli app run",
