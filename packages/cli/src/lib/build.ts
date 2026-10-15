@@ -68,11 +68,15 @@ function validateManifest(path: string): Manifest {
     throw new Error('appmeta/manifest.json is missing and required')
   }
   const manifest = JSON.parse(readFileSync(path, 'utf8')) as Partial<Manifest>
-  if (typeof manifest.id !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(manifest.id)) {
-    throw new Error('manifest.id must match ^[a-zA-Z0-9._-]+$')
+  if (typeof manifest.id !== 'string') {
+    throw new Error('manifest.id is required')
   }
   if (manifest.id.length > 32) {
     throw new Error(`manifest.id must be at most 32 characters, this one is ${manifest.id.length}`)
+  }
+  // The same check as js_app_is_valid_id in the firmware.
+  if (!/^[a-zA-Z0-9_-][a-zA-Z0-9_.-]{0,31}$/.test(manifest.id)) {
+    throw new Error('manifest.id must match ^[a-zA-Z0-9_-][a-zA-Z0-9_.-]{0,31}$: Latin letters, digits, underscore, dash and dot, not starting with a dot, at most 32 characters')
   }
   if (!/^\d+\.\d+\.\d+$/.test(manifest.version ?? '')) {
     throw new Error('manifest.version must be semver, e.g. "1.0.0"')

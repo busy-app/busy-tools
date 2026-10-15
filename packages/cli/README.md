@@ -54,7 +54,7 @@ An export in the entry point fails the build. Imported modules can use standard 
 
 | Field | Rule |
 | --- | --- |
-| `id` | letters, digits, `.`, `_` and `-`, at most 32 characters |
+| `id` | Latin letters, digits, `_`, `-` and `.`, not starting with `.`, at most 32 characters |
 | `version` | `x.y.z` |
 | `api_version` | `x.y.z`, the minimum BUSY Bar HTTP API version the app needs |
 | `name` | not empty |
