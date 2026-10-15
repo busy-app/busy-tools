@@ -12,7 +12,7 @@ Options:
   --tgz              also pack the built app into <id>.tgz
   --tgz-only         pack into <id>.tgz, without keeping the folder
   --tgz-name <name>  custom archive file name (default: <id>.tgz)
-  -h, --help         show this
+  -h, --help         show help
 
 Writing {id} or {version} in --tgz-name puts the app's id or version from the manifest in that place:
   busy-cli build --tgz --tgz-name "{id}-{version}.tgz"    →  app.example.my_app-1.0.0.tgz
