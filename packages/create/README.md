@@ -20,7 +20,7 @@ Any omitted option will be prompted interactively. `--help` lists the flags.
 
 ### App IDs
 
-An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dots, and underscores. The default namespace is `app.<author>`, made from the author's name: "Jane Doe" gives `app.jane_doe`. A name with no Latin letters or digits, or one too long to fit, falls back to `app.example` — a placeholder to replace with your own namespace before publishing.
+An id is `<namespace>.<app>`, at most 32 characters, made of Latin letters, digits, underscores, dashes, and dots, and not starting with a dot. The default id is made from the author's name and the folder name, lowercased, with spaces turned into underscores: "Jane Doe" and `my-app` give `app.jane_doe.my-app`. An author's name the id cannot take — one with other characters, or one too long to fit — falls back to `app.example`, a placeholder to replace with your own namespace before publishing; a folder name the id cannot take falls back to `app`.
 
 ## What you get
 

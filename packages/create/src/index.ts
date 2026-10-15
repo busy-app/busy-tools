@@ -41,10 +41,12 @@ const c = {
   red: wrap(31),
 }
 
-/** The id the app is known by, e.g. `app.jane_doe.my_app`. */
-const ID_RE = /^[a-zA-Z0-9._]+$/
+/** The id the app is known by, e.g. `app.jane_doe.my_app`; the same check as js_app_is_valid_id in the firmware. */
+const ID_RE = /^[a-zA-Z0-9_-][a-zA-Z0-9_.-]{0,31}$/
 /** Longest id the manifest accepts. */
 const ID_MAX = 32
+/** One part of an id between dots. */
+const SEGMENT_RE = /^[a-zA-Z0-9_-]+$/
 
 /** The minimum BUSY Bar HTTP API version a new app asks for by default. */
 const API_VERSION = '27.12.0'
@@ -52,24 +54,25 @@ const API_VERSION_RE = /^\d+\.\d+\.\d+$/
 
 /** The namespace segment used when the author's name gives none; meant to be replaced before publishing. */
 const PLACEHOLDER = 'example'
+/** The app segment used when the folder name gives none. */
+const APP_PLACEHOLDER = 'app'
 
-/** Lowercases a name and turns every run of other characters into an underscore: "My App" → "my_app". */
-function slugify(text: string, keep = ''): string {
-  return text
-    .toLowerCase()
-    .replace(new RegExp(`[^a-z0-9${keep}]+`, 'g'), '_')
-    .replace(/^_+|_+$/g, '')
+/** Lowercases a name and turns every run of whitespace into an underscore, keeping every other character: "My-App 2" → "my-app_2". */
+function slugify(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, '_')
 }
 
 /** Turns a folder name and the author into an app id: "My App" by "Jane Doe" → "app.jane_doe.my_app". */
 function suggestId(dirName: string, author: string): string {
-  const slug = slugify(dirName, '.')
+  const slug = slugify(dirName)
   // A dotted name is already an id.
-  if (slug.includes('.')) return slug
+  if (slug.includes('.') && ID_RE.test(slug)) return slug
 
-  const app = slug || 'app'
-  const id = `app.${slugify(author) || PLACEHOLDER}.${app}`
-  // An author too long to fit, or one with no Latin letters or digits, leaves the placeholder.
+  // A part the firmware would reject gives way to its placeholder; the other part stays.
+  const app = SEGMENT_RE.test(slug) ? slug : APP_PLACEHOLDER
+  const namespace = slugify(author)
+  const id = `app.${SEGMENT_RE.test(namespace) ? namespace : PLACEHOLDER}.${app}`
+  // An author too long to fit leaves the placeholder too.
   return id.length > ID_MAX ? `app.${PLACEHOLDER}.${app}` : id
 }
 
@@ -265,8 +268,8 @@ async function main() {
     option: 'id',
     fallback: suggestId(basename(target), author),
     validate: (v) => {
-      if (!ID_RE.test(v)) return 'only letters, digits, dot and underscore'
       if (v.length > ID_MAX) return `at most ${ID_MAX} characters, this one is ${v.length}`
+      if (!ID_RE.test(v)) return `only Latin letters, digits, underscore, dash and dot, not starting with a dot, at most ${ID_MAX} characters`
       return null
     },
   })

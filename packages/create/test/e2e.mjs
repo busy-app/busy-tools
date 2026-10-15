@@ -269,15 +269,29 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     )
   })
 
-  test('rejects a dash in the id', () => {
-    assert.throws(
-      () =>
-        run(resolve(work, 'node_modules/.bin/busy-create-app'), ['dashed', '--author', APP_AUTHOR, '--id', 'app.example.my-app'], {
-          cwd: work,
-          input: '',
-        }),
-      /dot and underscore/,
+  test('takes a dash in the id', () => {
+    const dir = resolve(work, 'dashed')
+    run(
+      resolve(work, 'node_modules/.bin/busy-create-app'),
+      ['dashed', '--id', 'app.example.my-app', '--name', 'N', '--description', 'd', '--author', APP_AUTHOR, '--no-git', '--no-install'],
+      { cwd: work, input: '' },
     )
+    const manifest = JSON.parse(readFileSync(resolve(dir, 'src/appmeta/manifest.json'), 'utf8'))
+    assert.equal(manifest.id, 'app.example.my-app')
+  })
+
+  // The firmware rejects these, so the generator does too.
+  test('rejects a leading dot or a non-Latin letter in the id', () => {
+    for (const [dir, id] of [['leading-dot', '.app.example.x'], ['non-latin', 'app.example.приложение']]) {
+      assert.throws(
+        () =>
+          run(resolve(work, 'node_modules/.bin/busy-create-app'), [dir, '--author', APP_AUTHOR, '--id', id], {
+            cwd: work,
+            input: '',
+          }),
+        /only Latin letters/,
+      )
+    }
   })
 
   test('takes the API version from --api-version', () => {
@@ -302,16 +316,27 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     )
   })
 
-  // A dashed folder name still works: the id takes an underscore instead.
-  test('turns a dash in the folder name into an underscore', () => {
-    const dir = resolve(work, 'dashed-name')
+  test('keeps a dash and turns a space in the folder name into an underscore', () => {
+    for (const [dir, id] of [['dashed-name', 'app.nobody.dashed-name'], ['spaced name', 'app.nobody.spaced_name']]) {
+      run(
+        resolve(work, 'node_modules/.bin/busy-create-app'),
+        [dir, '--name', 'N', '--description', 'd', '--author', APP_AUTHOR, '--no-git', '--no-install'],
+        { cwd: work, input: '' },
+      )
+      const manifest = JSON.parse(readFileSync(resolve(work, dir, 'src/appmeta/manifest.json'), 'utf8'))
+      assert.equal(manifest.id, id)
+    }
+  })
+
+  test('falls back to a placeholder app part', () => {
+    // A character the firmware rejects in the folder name; the author's namespace stays.
     run(
       resolve(work, 'node_modules/.bin/busy-create-app'),
-      ['dashed-name', '--name', 'Dashed', '--description', 'd', '--author', APP_AUTHOR, '--no-git', '--no-install'],
+      ['my app (2)', '--name', 'N', '--description', 'd', '--author', APP_AUTHOR, '--no-git', '--no-install'],
       { cwd: work, input: '' },
     )
-    const manifest = JSON.parse(readFileSync(resolve(dir, 'src/appmeta/manifest.json'), 'utf8'))
-    assert.equal(manifest.id, 'app.nobody.dashed_name')
+    const manifest = JSON.parse(readFileSync(resolve(work, 'my app (2)', 'src/appmeta/manifest.json'), 'utf8'))
+    assert.equal(manifest.id, 'app.nobody.app')
   })
 
   test('leaves the repository out with --no-git', () => {
@@ -326,8 +351,8 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
   })
 
   test('falls back to a placeholder namespace', () => {
-    // No Latin letters or digits in one author, too many in the other.
-    for (const [dir, author] of [['cyrillic', 'Иван'], ['lengthy', 'A Remarkably Long Author Name']]) {
+    // A letter the firmware rejects in one author, an apostrophe in another, too many characters in the last.
+    for (const [dir, author] of [['cyrillic', 'Иван'], ['apostrophe', "O'Brien"], ['lengthy', 'A Remarkably Long Author Name']]) {
       run(
         resolve(work, 'node_modules/.bin/busy-create-app'),
         [dir, '--author', author, '--name', 'N', '--description', 'd', '--no-git', '--no-install'],

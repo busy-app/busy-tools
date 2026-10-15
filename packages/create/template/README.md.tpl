@@ -11,7 +11,7 @@ pnpm install
 pnpm build
 ```
 
-The app's id is `{{appId}}`, set in `src/appmeta/manifest.json`. An id is `<namespace>.<app>`, at most 32 characters, made of letters, digits, dots, and underscores. If yours still says `app.example`, change it to your own namespace before publishing.
+The app's id is `{{appId}}`, set in `src/appmeta/manifest.json`. An id is `<namespace>.<app>`, at most 32 characters, made of Latin letters, digits, underscores, dashes, and dots, and not starting with a dot. If yours still says `app.example`, change it to your own namespace before publishing.
 
 ## Layout
 
