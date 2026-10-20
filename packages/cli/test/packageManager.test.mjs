@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
-import { createCommandLine, parseAnswer, takePackageManager } from '../dist/lib/packageManager.js'
+import { createCommandLine, takePackageManager } from '../dist/lib/packageManager.js'
 
 describe('takePackageManager', () => {
   test('takes the flag in either form, leaving the rest for the generator', () => {
@@ -23,22 +23,6 @@ describe('takePackageManager', () => {
     assert.throws(() => takePackageManager(['--package-manager']), /needs one of/)
     assert.throws(() => takePackageManager(['--package-manager', '--no-git']), /needs one of/)
     assert.throws(() => takePackageManager(['--package-manager=']), /needs one of/)
-  })
-})
-
-describe('parseAnswer', () => {
-  test('takes a number from the list or a name', () => {
-    assert.equal(parseAnswer('1'), 'npm')
-    assert.equal(parseAnswer('4'), 'bun')
-    assert.equal(parseAnswer(' Yarn '), 'yarn')
-  })
-
-  test('takes pnpm on Enter', () => {
-    assert.equal(parseAnswer(''), 'pnpm')
-  })
-
-  test('rejects anything else', () => {
-    for (const answer of ['0', '5', '1.5', 'deno', 'pnmp']) assert.equal(parseAnswer(answer), null, answer)
   })
 })
 

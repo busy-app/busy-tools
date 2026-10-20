@@ -1,12 +1,11 @@
 import { execFileSync } from 'node:child_process'
-import { createInterface } from 'node:readline/promises'
+import { cancel, isCancel, log, select } from '@clack/prompts'
 import { c, helpRow } from '../lib/colors.js'
 import {
   createCommandLine,
   isPackageManager,
   PACKAGE_MANAGERS,
   type PackageManager,
-  parseAnswer,
   RECOMMENDED,
   takePackageManager,
 } from '../lib/packageManager.js'
@@ -30,23 +29,20 @@ ${helpRow('--no-install', 'skip installing dependencies')}
   Every option but ${c.cyan('--package-manager')} goes to the generator; anything not passed is asked for at its prompts.
 `
 
-/** Asks for the package manager from a numbered list, under a note explaining why the flag was missing or invalid. */
+/** Prompts for the package manager from an interactive list navigated with arrow keys, under a note explaining why the flag was not used. */
 async function askPackageManager(note?: string): Promise<PackageManager> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout })
-  try {
-    if (note) console.log(note)
-    console.log('Which package manager would you like to use?')
-    PACKAGE_MANAGERS.forEach((pm, i) => console.log(`  ${i + 1}) ${pm}${pm === RECOMMENDED ? c.dim(' (recommended)') : ''}`))
-
-    for (;;) {
-      const pm = parseAnswer(await rl.question(`Package manager ${c.dim(`(${RECOMMENDED})`)}: `))
-      if (pm) return pm
-      console.log(c.red(`  expected a number from 1 to ${PACKAGE_MANAGERS.length} or one of ${PACKAGE_MANAGERS.join(', ')}`))
-    }
-  } finally {
-    // Hands stdin over to the generator's own prompts.
-    rl.close()
+  if (note) log.warn(note)
+  const pm = await select({
+    message: 'Which package manager would you like to use?',
+    options: PACKAGE_MANAGERS.map((pm) => ({ value: pm, label: pm, ...(pm === RECOMMENDED ? { hint: 'recommended' } : {}) })),
+    initialValue: RECOMMENDED,
+  })
+  // As nuxi does on Ctrl+C.
+  if (isCancel(pm)) {
+    cancel('Operation cancelled.')
+    process.exit(1)
   }
+  return pm
 }
 
 /**
@@ -56,13 +52,14 @@ async function askPackageManager(note?: string): Promise<PackageManager> {
 async function choosePackageManager(flag: string | undefined): Promise<PackageManager> {
   if (isPackageManager(flag)) return flag
 
-  if (!process.stdin.isTTY) {
+  // The list needs a terminal on both ends: keys come from stdin, and clack redraws stdout.
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
     const expected = `Pass one of ${PACKAGE_MANAGERS.join(', ')} with --package-manager <name>.`
     if (flag !== undefined) throw new Error(`Unknown package manager: ${flag}\n${expected}`)
     throw new Error(`A package manager is required, and it cannot be prompted without an interactive terminal.\n${expected}`)
   }
 
-  return askPackageManager(flag === undefined ? undefined : c.red(`Unknown package manager: ${flag}`))
+  return askPackageManager(flag === undefined ? undefined : `Unknown package manager: ${flag}`)
 }
 
 export async function createCommand(args: string[]): Promise<void> {

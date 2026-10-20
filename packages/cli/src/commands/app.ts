@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { basename, relative, resolve } from 'node:path'
+import { log } from '@clack/prompts'
 import { readAppId } from '../lib/build.js'
 import { c, helpRow } from '../lib/colors.js'
 import { DEFAULT_ADDR, type Device, ensureReachable, request, takeDevice } from '../lib/device.js'
@@ -104,35 +105,35 @@ async function install(device: Device, file: string): Promise<void> {
   const body = await readFile(path)
   await ensureReachable(device)
 
-  console.log(`\n▶ Uploading ${basename(path)} to ${device.base.host}`)
+  log.step(`Uploading ${basename(path)} to ${device.base.host}`)
   const { install_key, staged, installed } = await request<StageResult>(device, 'POST', '/api/apps/stage', {
     body,
     timeoutMs: INSTALL_TIMEOUT_MS,
   })
 
-  console.log(`  ${installed ? `replacing v${installed.version} with` : 'installing'} ${staged.id} v${staged.version}`)
+  log.message(`${installed ? `replacing v${installed.version} with` : 'installing'} ${staged.id} v${staged.version}`)
   await request(device, 'POST', '/api/apps/install', { query: { install_key }, timeoutMs: INSTALL_TIMEOUT_MS })
 
-  console.log(`\n✔ Installed ${c.bold(staged.name)} ${c.dim(`(${staged.id})`)}`)
+  log.success(`Installed ${c.bold(staged.name)} ${c.dim(`(${staged.id})`)}`)
 }
 
 async function run(device: Device, appId: string): Promise<void> {
   await ensureReachable(device)
   await request(device, 'POST', '/api/apps/launch', { query: { app_id: appId } })
 
-  console.log(`\n✔ Launched ${c.bold(appId)}`)
+  log.success(`Launched ${c.bold(appId)}`)
 }
 
 async function stop(device: Device): Promise<void> {
   await ensureReachable(device)
   await request(device, 'POST', '/api/apps/quit')
 
-  console.log('\n✔ Stopped')
+  log.success('Stopped')
 }
 
 async function uninstall(device: Device, appId: string): Promise<void> {
   await ensureReachable(device)
   await request(device, 'DELETE', '/api/apps', { query: { app_id: appId } })
 
-  console.log(`\n✔ Uninstalled ${c.bold(appId)}`)
+  log.success(`Uninstalled ${c.bold(appId)}`)
 }

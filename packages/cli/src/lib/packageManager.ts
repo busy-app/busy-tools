@@ -30,14 +30,6 @@ export function takePackageManager(args: string[]): { value?: string; rest: stri
   return { value, rest: [...args.slice(0, at), ...args.slice(at + (inline ? 1 : 2))] }
 }
 
-/** An answer to the prompt: a number from the list or a name; empty takes the recommended one, anything else is null. */
-export function parseAnswer(answer: string): PackageManager | null {
-  const value = answer.trim().toLowerCase()
-  if (!value) return RECOMMENDED
-  if (/^\d+$/.test(value)) return PACKAGE_MANAGERS[Number(value) - 1] ?? null
-  return isPackageManager(value) ? value : null
-}
-
 /** The command that launches the generator; npm takes the generator's options as its own unless they follow `--`. */
 export function createCommandLine(pm: PackageManager, args: string[]): string[] {
   return ['create', '@busy-app/app', ...(pm === 'npm' && args.length > 0 ? ['--'] : []), ...args]

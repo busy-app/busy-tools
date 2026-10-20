@@ -22,7 +22,9 @@ import {
 } from 'node:fs'
 import { basename, relative, resolve } from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { log } from '@clack/prompts'
 import { build as viteBuild } from 'vite'
+import { c } from './colors.js'
 import { appmetaDir, outRoot, type Project } from './paths.js'
 import { classify, isMedia, KNOWN_DIRS, RESOURCE_DIRS } from './resources.js'
 import { buildViteConfig } from './viteConfig.js'
@@ -115,7 +117,7 @@ function layoutResources(srcDir: string, outDir: string, sourceDirName?: string,
     if (SOURCE_FILE.test(entry.name)) continue
 
     const { target, warning } = classify(entry.name, sourceDirName)
-    if (warning) console.warn(`  ⚠ ${warning}`)
+    if (warning) log.warn(warning)
     const destDir = resolve(outDir, target)
     mkdirSync(destDir, { recursive: true })
     cpSync(src, resolve(destDir, entry.name))
@@ -163,8 +165,8 @@ export async function build(project: Project, opts: Options = {}): Promise<strin
 
   const destDir = outRoot(project, out)
   const manifest = validateManifest(resolve(appmetaDir(project), 'manifest.json'))
-  console.log(`\n▶ Building ${manifest.id} v${manifest.version}`)
-  if (addr !== DEFAULT_ADDR) console.log(`  addr: ${addr}`)
+  log.step(`Building ${c.bold(manifest.id)} v${manifest.version}`)
+  if (addr !== DEFAULT_ADDR) log.message(`addr: ${addr}`)
 
   const outDir = resolve(destDir, manifest.id)
   // Resolved before the build, so a bad name fails at once.
@@ -195,7 +197,7 @@ export async function build(project: Project, opts: Options = {}): Promise<strin
     // A resource in the app's root is in no folder the build takes, so it would be missing on the device without a word.
     for (const entry of readdirSync(app, { withFileTypes: true })) {
       if (!entry.isFile() || entry.name.startsWith('.') || !isMedia(entry.name)) continue
-      console.warn(`  ⚠ ${entry.name} is not packaged, move it to ${classify(entry.name).target}/`)
+      log.warn(`${entry.name} is not packaged, move it to ${classify(entry.name).target}/`)
     }
   }
 
@@ -208,7 +210,7 @@ export async function build(project: Project, opts: Options = {}): Promise<strin
   }
 
   const scripts = readdirSync(resolve(outDir, 'scripts')).sort()
-  console.log(`  scripts: ${scripts.join(', ')}`)
+  log.message(`scripts: ${scripts.join(', ')}`)
 
   let result = outDir
 
@@ -219,6 +221,6 @@ export async function build(project: Project, opts: Options = {}): Promise<strin
     result = archive
   }
 
-  console.log(`\n✔ Done → ${relative(root, result) || result}`)
+  log.success(`Done → ${relative(root, result) || result}`)
   return result
 }
