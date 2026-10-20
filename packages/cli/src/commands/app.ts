@@ -5,6 +5,7 @@ import { log, spinner } from '@clack/prompts'
 import { readAppId } from '../lib/build.js'
 import { c, helpRow } from '../lib/colors.js'
 import { DEFAULT_ADDR, type Device, ensureReachable, request, takeDevice } from '../lib/device.js'
+import { buildHint } from '../lib/hints.js'
 import { findProject, outRoot } from '../lib/paths.js'
 
 const USAGE = `
@@ -93,7 +94,7 @@ function ownPackage(): string {
 
   const path = resolve(outRoot(project), `${readAppId(project)}.tgz`)
   if (!existsSync(path)) {
-    throw new Error(`Nothing to install: there is no ${relative(process.cwd(), path)}.\nBuild it first with busy-cli build, or pass the path to a .tgz package.`)
+    throw new Error(`Nothing to install: there is no ${relative(process.cwd(), path)}.\nBuild it first with ${buildHint(project.root)}, or pass the path to a .tgz package.`)
   }
   return path
 }

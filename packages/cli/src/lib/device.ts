@@ -2,23 +2,25 @@
 
 import { connect } from 'node:net'
 import { explainCause, UserError } from './errors.js'
+import { buildHint, rerunHint } from './hints.js'
+import { findProject } from './paths.js'
 
 export const DEFAULT_ADDR = '10.0.4.20'
 
 const CONNECT_TIMEOUT_MS = 3000
 const REQUEST_TIMEOUT_MS = 30_000
 
-/** What a failed call means where the firmware answers with a generic text such as "Bad Request", by endpoint and status; taken from the firmware's api_apps.c and its OpenAPI description. */
+/** What a failed call means where the firmware answers with a generic text such as "Bad Request", by endpoint and status; taken from the firmware's api_apps.c and its OpenAPI description. {build} and {rerun} stand for the commands that build the app and run this one again, spelled for how the CLI was started. */
 const MEANINGS: Record<string, Record<number, string>> = {
   '/api/apps/stage': {
-    400: 'The BUSY Bar rejected the package. Build it with busy-cli build, which packs it the way the BUSY Bar expects.',
+    400: 'The BUSY Bar rejected the package. Build it with {build}, which packs it the way the BUSY Bar expects.',
     408: 'The upload stalled: the BUSY Bar received no data for 5 seconds and closed the connection. Try again, or connect over USB if currently on Wi-Fi.',
     409: 'The upload session expired or was interrupted, or the app needs a newer HTTP API than the firmware supports.',
     413: 'The package is too large: the BUSY Bar accepts at most 100 MB.',
     508: 'The BUSY Bar could not save the package. Check that its storage has free space.',
   },
   '/api/apps/install': {
-    400: 'The BUSY Bar did not install the uploaded app; the firmware does not report why. Run busy-cli app install again.',
+    400: 'The BUSY Bar did not install the uploaded app; the firmware does not report why. Run {rerun} again.',
   },
   '/api/apps/launch': {
     400: 'The app id is invalid.',
@@ -42,7 +44,7 @@ const RAW_SHOWN = 200
 
 /** What the installer's error_code from /api/apps/stage means. */
 const ERROR_CODES: Record<string, string> = {
-  unpack_error: 'The package could not be unpacked. Build it with busy-cli build, which packs it the way the BUSY Bar expects.',
+  unpack_error: 'The package could not be unpacked. Build it with {build}, which packs it the way the BUSY Bar expects.',
   manifest_error: 'The appmeta/manifest.json in the package is invalid.',
   api_mismatch: 'The app needs a newer HTTP API than the firmware supports: lower api_version in the manifest, or update the firmware.',
   installation_failed: 'The BUSY Bar could not install the app.',
@@ -93,6 +95,13 @@ export function ensureReachable({ base }: Device): Promise<void> {
   })
 }
 
+/** Fills {build} and {rerun} in a meaning with the commands the user can run where they are. */
+function spellCommands(text: string): string {
+  return text
+    .replaceAll('{build}', () => buildHint(findProject(process.cwd())?.root ?? process.cwd()))
+    .replaceAll('{rerun}', () => rerunHint('busy-cli app install'))
+}
+
 /** The error body the firmware sends: `{"error": "..."}`, and from the installer an `error_code` too. */
 type ErrorBody = { error?: unknown; error_code?: unknown }
 
@@ -115,7 +124,7 @@ function failure(path: string, res: Response, body: ErrorBody | undefined, raw: 
   else if (!said && raw.trim()) lines.push(`The response was not the BUSY Bar's JSON: ${raw.trim().slice(0, RAW_SHOWN)}${raw.trim().length > RAW_SHOWN ? '…' : ''}`)
 
   const meaning = (code && ERROR_CODES[code]) || MEANINGS[path]?.[res.status]
-  if (meaning) lines.push(meaning)
+  if (meaning) lines.push(spellCommands(meaning))
   if (res.status === 403) lines.push(ACCESS_HINT)
   return lines.join('\n')
 }
