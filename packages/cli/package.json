@@ -27,7 +27,7 @@
     "build": "tsc -b",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "pretest": "pnpm build",
-    "test": "node --test",
+    "test": "node --test 'test/*.test.mjs'",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
