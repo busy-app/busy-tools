@@ -3,22 +3,30 @@
 `busy-cli` builds a JavaScript app for the BUSY Bar into a device package and manages apps on a connected BUSY Bar.
 
 ```sh
-pnpm add -D @busy-app/cli
+npm install -D @busy-app/cli     # or: pnpm add -D, yarn add -D, bun add -D
 ```
 
 | Command | Description |
 | --- | --- |
-| `busy-cli create [dir]` | scaffolds a new app via `pnpm create @busy-app/app` |
+| `busy-cli create [dir]` | scaffolds a new app with `<pm> create @busy-app/app` |
 | `busy-cli build` | builds the app in the current folder into a package |
 | `busy-cli app <command>` | installs, uninstalls, runs or stops an app on a connected BUSY Bar |
 
 `busy-cli <command> --help` lists the options for each command.
 
+## create
+
+```sh
+busy-cli create [dir] [options]
+```
+
+Runs `<pm> create @busy-app/app` using the package manager specified via `--package-manager <npm|pnpm|yarn|bun>`, which then installs the app with that package manager. Without the flag, or with an unknown name, `busy-cli create` prompts you interactively, with pnpm preselected. Without a terminal, interactive prompts cannot be shown, so the flag is required. All other options are forwarded to the generator; see [`@busy-app/create-app`](../create).
+
 ## The project
 
 `busy-cli build` and `busy-cli app` work on the folder they are run in, and look nowhere else: not above it, not below it.
 
-The app sits either under `src/`, as scaffolded by `pnpm create @busy-app/app`, or right in the project folder:
+The app sits either under `src/`, as scaffolded by `busy-cli create` or `npm create @busy-app/app`, or right in the project folder:
 
 ```
 my-app/                          my-app/

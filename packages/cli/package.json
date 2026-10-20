@@ -26,6 +26,8 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "pnpm build",
+    "test": "node --test",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
