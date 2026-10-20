@@ -8,7 +8,7 @@ A JavaScript app for the BUSY Bar, generated from the BUSY JS app template.
 
 ```sh
 {{pm}} install
-{{run}} build/tgz     # build the app and pack it into dist/{{appId}}.tgz
+{{run}} build         # build the app into dist/{{appId}}.tgz
 {{run}} app:install   # install it on the BUSY Bar connected over USB
 {{run}} app:run       # launch the installed app
 ```
@@ -65,16 +65,16 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 
 | Command | Description |
 | --- | --- |
-| `{{run}} build` | empties `dist/` and builds the package into it |
+| `{{run}} build` | empties `dist/` and builds the package into `dist/{{appId}}.tgz` |
+| `{{run}} build{{argsSep}} --emit dir` | leaves the `{{appId}}/` folder instead of the `.tgz` |
+| `{{run}} build{{argsSep}} --emit both` | leaves the folder and the `.tgz` |
 | `{{run}} build{{argsSep}} --out <path>` | builds into `<path>` instead, replacing only this app's package there |
-| `{{run}} build/tgz` | also packs the package into a `.tgz` alongside it; the same as `{{run}} build{{argsSep}} --tgz` |
-| `{{run}} build{{argsSep}} --tgz-only` | packs the `.tgz` and leaves nothing else |
-| `{{run}} build{{argsSep}} --tgz --tgz-name <name>` | names the `.tgz`, e.g. `"{id}-{version}.tgz"` |
+| `{{run}} build{{argsSep}} --tgz-name <name>` | names the `.tgz`, e.g. `"{id}-{version}.tgz"` |
 | `{{run}} build{{argsSep}} --no-minify` | readable output, for debugging |
 | `{{run}} build{{argsSep}} --bundle` | inlines every module into one `main.js` |
 | `{{run}} build{{argsSep}} --addr <host>` | sets the BUSY Bar address the app connects to, `localhost` by default |
 | `{{run}} typecheck` | type-checks the app |
-| `{{run}} app:install` | installs `dist/{{appId}}.tgz` on the BUSY Bar; build it first with `{{run}} build/tgz` |
+| `{{run}} app:install` | installs `dist/{{appId}}.tgz` on the BUSY Bar; build it first with `{{run}} build` |
 | `{{run}} app:uninstall` | removes the app from the BUSY Bar, keeping its settings |
 | `{{run}} app:run` | launches the installed app |
 | `{{run}} app:stop` | quits the running app |
@@ -98,7 +98,7 @@ dist/
     └── images/ animations/ sounds/ resources/
 ```
 
-`--tgz` packs that folder into `dist/{{appId}}.tgz`, with the folder itself at the root of the archive. `--tgz-name` gives the archive another name; `{id}` and `{version}` in it are replaced with the manifest values.
+By default the build packs that folder into `dist/{{appId}}.tgz`, with the folder itself at the root of the archive, and removes the folder; `--emit dir` keeps only the folder, `--emit both` keeps both. `--tgz-name` gives the archive another name; `{id}` and `{version}` in it are replaced with the manifest values.
 
 ## Releasing
 

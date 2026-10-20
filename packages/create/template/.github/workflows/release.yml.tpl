@@ -45,7 +45,7 @@ jobs:
 
       - run: {{run}} typecheck
 
-      - run: {{run}} build{{argsSep}} --tgz --tgz-name "{id}-{version}.tgz"
+      - run: {{run}} build{{argsSep}} --tgz-name "{id}-{version}.tgz"
 
       # A release made from the UI already exists by the time the tag push gets here: attach the archive to it and keep whatever notes were written by hand, below the app's details.
       - name: Publish the release

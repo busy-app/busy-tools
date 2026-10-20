@@ -12,7 +12,7 @@ Tooling for building JavaScript apps for the [BUSY Bar](https://busy.bar).
 ```sh
 pnpm create @busy-app/app my-app
 cd my-app
-pnpm build/tgz     # build the app and pack it into dist/<id>.tgz
+pnpm build         # build the app into dist/<id>.tgz
 pnpm app:install   # install it on the BUSY Bar connected over USB
 pnpm app:run       # launch the installed app
 ```

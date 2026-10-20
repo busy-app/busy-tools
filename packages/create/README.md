@@ -5,7 +5,7 @@ Scaffolds a JavaScript app for the BUSY Bar. One app, one repository.
 ```sh
 npm create @busy-app/app my-app
 cd my-app
-npm run build/tgz     # build the app and pack it into dist/<id>.tgz
+npm run build         # build the app into dist/<id>.tgz
 npm run app:install   # install it on the BUSY Bar connected over USB
 npm run app:run       # launch the installed app
 ```
@@ -63,7 +63,7 @@ Resources go into `src/images/`, `src/animations/` and `src/sounds/`, created as
 
 Layout, fonts and XPM2 come from `@busy-app/busy-lib`; the build itself from `@busy-app/cli`.
 
-The `build` script empties `dist/` and produces the package in `dist/<id>/`, named after the manifest id; `--out <path>` puts it elsewhere, and `--tgz` packs it into `<id>.tgz` alongside, or under the name given with `--tgz-name`; `build/tgz` is `build --tgz`. The `app:install`, `app:uninstall`, `app:run` and `app:stop` scripts manage the app on a connected BUSY Bar. The generated app's README covers both topics, and [`@busy-app/cli`](../cli) has the details.
+The `build` script empties `dist/` and produces the package as `dist/<id>.tgz`, named after the manifest id, or under the name given with `--tgz-name`; `--emit dir` leaves the `<id>/` folder instead, `--emit both` leaves both, and `--out <path>` puts them elsewhere. The `app:install`, `app:uninstall`, `app:run` and `app:stop` scripts manage the app on a connected BUSY Bar. The generated app's README covers both topics, and [`@busy-app/cli`](../cli) has the details.
 
 ## Working on the generator
 
