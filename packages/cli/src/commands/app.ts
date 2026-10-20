@@ -18,7 +18,7 @@ ${helpRow('run [app-id]', 'launch an installed app')}
 ${helpRow('stop', 'quit the running app')}
 
   Run from an app folder, ${c.cyan('uninstall')} and ${c.cyan('run')} need no id: it is read from appmeta/manifest.json.
-  ${c.cyan('install')} without a file takes dist/<id>.tgz of that folder, the package ${c.cyan('busy-cli build --tgz')} makes. It does not build anything itself.
+  ${c.cyan('install')} without a file takes dist/<id>.tgz of that folder, the package ${c.cyan('busy-cli build')} makes. It does not build anything itself.
 
 ${c.bold('Options:')}
 ${helpRow('--addr <host>', `BUSY Bar address ${c.dim(`(default: ${DEFAULT_ADDR}, its default address over USB)`)}`)}
@@ -85,14 +85,14 @@ function ownAppId(command: string): string {
   return readAppId(project)
 }
 
-/** The package of the app in the current folder, where `busy-cli build --tgz` leaves it. Nothing is built here: a missing package is an error. */
+/** The package of the app in the current folder, where `busy-cli build` leaves it. Nothing is built here: a missing package is an error. */
 function ownPackage(): string {
   const project = findProject(process.cwd())
   if (!project) throw new Error(`app install needs a path to a .tgz package.\nOr run it from ${APP_FOLDER}.`)
 
   const path = resolve(outRoot(project), `${readAppId(project)}.tgz`)
   if (!existsSync(path)) {
-    throw new Error(`Nothing to install: there is no ${relative(process.cwd(), path)}.\nBuild it first with busy-cli build --tgz, or pass the path to a .tgz package.`)
+    throw new Error(`Nothing to install: there is no ${relative(process.cwd(), path)}.\nBuild it first with busy-cli build, or pass the path to a .tgz package.`)
   }
   return path
 }

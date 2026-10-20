@@ -139,6 +139,10 @@ function rewriteAssetUrls(scriptsDir: string, moved: Map<string, string>): void 
 
 export const DEFAULT_ADDR = 'localhost'
 
+/** What a build leaves: the archive, the package folder, or both. */
+export const EMITS = ['tgz', 'dir', 'both'] as const
+export type Emit = (typeof EMITS)[number]
+
 export type Options = {
   /** Output directory; a relative path resolves against the project root. */
   out?: string
@@ -146,18 +150,16 @@ export type Options = {
   addr?: string
   minify?: boolean
   bundle?: boolean
-  /** Pack into a .tgz, keeping the folder. */
-  tgz?: boolean
-  /** Pack into a .tgz and drop the folder. Not to be combined with `tgz`. */
-  tgzOnly?: boolean
+  /** `tgz` (the default) leaves only `<id>.tgz`, `dir` only the `<id>/` folder, `both` the two. */
+  emit?: Emit
   /** Archive file name; `{id}` and `{version}` are filled in from the manifest. */
   tgzName?: string
 }
 
-/** Builds the app of `project`, returning the package folder or, when packing, the archive. */
+/** Builds the app of `project`, returning the archive or, when only the folder is emitted, the folder. */
 export async function build(project: Project, opts: Options = {}): Promise<string> {
   const { root, app, hasSrc } = project
-  const { out, addr = DEFAULT_ADDR, minify = true, bundle = false, tgz = false, tgzOnly = false, tgzName = '{id}.tgz' } = opts
+  const { out, addr = DEFAULT_ADDR, minify = true, bundle = false, emit = 'tgz', tgzName = '{id}.tgz' } = opts
 
   const destDir = outRoot(project, out)
   const manifest = validateManifest(resolve(appmetaDir(project), 'manifest.json'))
@@ -210,10 +212,10 @@ export async function build(project: Project, opts: Options = {}): Promise<strin
 
   let result = outDir
 
-  if (tgz || tgzOnly) {
+  if (emit !== 'dir') {
     // Packed from destDir so the archive holds the <id>/ folder itself.
     execFileSync('tar', ['-czf', archive, '-C', destDir, manifest.id], { stdio: 'inherit' })
-    if (tgzOnly) rmSync(outDir, { recursive: true, force: true })
+    if (emit === 'tgz') rmSync(outDir, { recursive: true, force: true })
     result = archive
   }
 

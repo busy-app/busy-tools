@@ -90,7 +90,7 @@ Without `src/`, the app shares its folder with the rest of the project, so only 
 busy-cli build
 ```
 
-The package lands in `dist/<id>/`, named after the manifest id:
+The package lands in `dist/<id>.tgz`, named after the manifest id. The archive holds the `<id>/` folder, the one `--emit dir` leaves instead:
 
 ```
 dist/
@@ -107,8 +107,7 @@ dist/
 | Option | Description |
 | --- | --- |
 | `--out <path>` | builds into `<path>` instead of `dist/`; a relative path resolves against the project. Only this app's package is replaced there, while the rest of the directory contents are preserved |
-| `--tgz` | also packs the package into `<id>.tgz` alongside it, with the `<id>/` folder at the root of the archive |
-| `--tgz-only` | packs the `.tgz` and removes the folder |
+| `--emit <tgz\|dir\|both>` | what the build leaves: `tgz`, the default, only `<id>.tgz`; `dir` only the `<id>/` folder; `both` the two |
 | `--tgz-name <name>` | names the archive; `{id}` and `{version}` in the name are replaced with the manifest values, e.g. `--tgz-name "{id}-{version}.tgz"` |
 | `--addr <host>` | the BUSY Bar address the app connects to, `localhost` by default: the device running the app |
 | `--no-minify` | readable output, for debugging on the device |
@@ -132,7 +131,7 @@ busy-cli app stop
 
 The file and the id can be omitted when the command is run from an app folder:
 
-- `install` takes `dist/<id>.tgz`, the package produced by `busy-cli build --tgz`. It does not build anything: without that file it exits with an error. A package built elsewhere or under another name is passed as a path.
+- `install` takes `dist/<id>.tgz`, the package produced by `busy-cli build`. It does not build anything: without that file it exits with an error. A package built elsewhere or under another name is passed as a path.
 - `uninstall` and `run` read the id from `appmeta/manifest.json`.
 
 When specified explicitly, the file and the id work from any folder.
