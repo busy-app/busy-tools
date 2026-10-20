@@ -268,6 +268,9 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
         { cwd: work, input: '', env: env(extraEnv) },
       )
 
+    /** A line of the Next steps box the generator ends with: `│  pnpm build  │`. */
+    const nextStep = (command) => new RegExp(`│  ${command} +│`)
+
     const packageManagerField = (dir) => JSON.parse(readFileSync(resolve(work, dir, 'package.json'), 'utf8')).packageManager
 
     for (const { name, pm, agent, build, withArgs, ci, field } of CASES) {
@@ -275,8 +278,8 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
         const dir = `pm-${name.replace(' ', '')}`
         const output = scaffold(dir, { npm_config_user_agent: agent })
 
-        assert.match(output, new RegExp(`^  ${pm} install$`, 'm'), 'the hint does not install with it')
-        assert.match(output, new RegExp(`^  ${build}$`, 'm'), 'the hint does not build with it')
+        assert.match(output, nextStep(pm + ' install'), 'the hint does not install with it')
+        assert.match(output, nextStep(build), 'the hint does not build with it')
 
         const readme = readFileSync(resolve(work, dir, 'README.md'), 'utf8')
         assert.ok(readme.includes(`\`${build}\``), `README lacks ${build}`)
@@ -298,11 +301,11 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     }
 
     test('falls back to npm without a launcher', () => {
-      assert.match(scaffold('pm-none'), /^ {2}npm run build$/m)
+      assert.match(scaffold('pm-none'), nextStep('npm run build'))
     })
 
     test('falls back to npm for an unsupported launcher', () => {
-      assert.match(scaffold('pm-deno', { npm_config_user_agent: 'deno/2.1.4 npm/? deno/2.1.4 linux x64' }), /^ {2}npm run build$/m)
+      assert.match(scaffold('pm-deno', { npm_config_user_agent: 'deno/2.1.4 npm/? deno/2.1.4 linux x64' }), nextStep('npm run build'))
     })
   })
 })

@@ -68,7 +68,8 @@ The `build` script empties `dist/` and produces the package as `dist/<id>.tgz`, 
 ## Working on the generator
 
 ```
-src/index.ts                   the prompts and the copy
+src/index.ts                   the questions and the copy
+src/ui.ts                      the console output: clack's prompts in a terminal, and matching formatting for flags and piped answers
 src/packageManager.ts          which package manager launched the generator, and how its commands are spelled
 template/                      exactly what a generated app looks like
 test/e2e.mjs                   packs, scaffolds, installs, type-checks and builds with npm; checks what each package manager gets (node:test)

@@ -6,7 +6,6 @@
 // Asks for the app's author, id, name, description and API version, copies the template with those substituted, initializes a git repository and installs the dependencies with the package manager that launched it. Every prompt has a flag; anything not passed is asked for.
 
 import { execFileSync } from 'node:child_process'
-import { createInterface } from 'node:readline'
 import {
   cpSync,
   existsSync,
@@ -20,7 +19,9 @@ import {
 import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
+import { cancel, intro, log, note, outro, spinner } from '@clack/prompts'
 import { argsSeparator, ciSetup, detectPackageManager, isYarnBerry, runCommand } from './packageManager.js'
+import { answered, ask, c, closeInput, runQuietly } from './ui.js'
 
 // Relative to dist/, where this file lands; template/ stays at the package root.
 const TEMPLATE = fileURLToPath(new URL('../template', import.meta.url))
@@ -32,15 +33,6 @@ const VERSION = `${PKG.name} ${PKG.version}`
 const RENAME = new Map([['_gitignore', '.gitignore']])
 /** Files carrying {{placeholders}}; the suffix is dropped on copy. */
 const TPL_SUFFIX = '.tpl'
-
-const wrap = (code: number) => (s: string) => `\x1b[${code}m${s}\x1b[0m`
-
-const c = {
-  bold: wrap(1),
-  dim: wrap(2),
-  green: wrap(32),
-  red: wrap(31),
-}
 
 /** The id the app is known by, e.g. `app.jane_doe.my_app`; the same check as js_app_is_valid_id in the firmware. */
 const ID_RE = /^[a-zA-Z0-9_-][a-zA-Z0-9_.-]{0,31}$/
@@ -224,12 +216,8 @@ async function main() {
     return
   }
 
-  // A line iterator rather than readline/promises: question() resolves only once when stdin is a pipe, which breaks piped and CI runs.
-  const rl = createInterface({ input: process.stdin })
-  const lines = rl[Symbol.asyncIterator]()
-
   /**
-   * A value for one field. A flag answers it, still validated; otherwise it is asked for, and Enter (or end of input) takes the default.
+   * A value for one field. A flag answers it, still validated, and is shown as answered; otherwise it is asked for, and Enter (or end of input) takes the default.
    */
   type Field = {
     /** The flag that answers this prompt without asking. */
@@ -238,34 +226,19 @@ async function main() {
     validate?: ((value: string) => string | null) | undefined
   }
 
-  const ask = async (question: string, { option, fallback, validate }: Field): Promise<string> => {
+  const field = async (message: string, { option, fallback, validate }: Field): Promise<string> => {
     const flag = opts[option]
-    if (typeof flag === 'string') {
-      const error = validate?.(flag)
-      if (error) throw new Error(`--${option}: ${error}`)
-      return flag
-    }
+    if (typeof flag !== 'string') return ask({ message, fallback, validate })
 
-    for (;;) {
-      const shown = fallback ? ` ${c.dim(`(${fallback})`)}` : ''
-      process.stdout.write(`${question}${shown}: `)
-
-      const line = await lines.next()
-      if (line.done) process.stdout.write('\n')
-      const answer = (line.done ? '' : line.value.trim()) || fallback || ''
-
-      const error = validate?.(answer)
-      if (!error) return answer
-
-      // End of input: there is no chance to correct the answer.
-      if (line.done) throw new Error(`${question}: ${error}`)
-      console.log(c.red(`  ${error}`))
-    }
+    const error = validate?.(flag)
+    if (error) throw new Error(`--${option}: ${error}`)
+    answered(message, flag)
+    return flag
   }
 
-  console.log(`\n${c.dim(VERSION)}\n\n${c.bold('Creating a BUSY Bar JS app')}\n`)
+  intro(`${c.bold('Creating a BUSY Bar JS app')} ${c.dim(VERSION)}`)
 
-  const dirName = await ask('Directory', {
+  const dirName = await field('Directory', {
     option: 'dir',
     fallback: 'my-app',
     validate: (v) => (v ? checkTarget(resolve(process.cwd(), v)) : 'a directory is required'),
@@ -273,12 +246,12 @@ async function main() {
   const target = resolve(process.cwd(), dirName)
 
   // Asked for before the id, which defaults to a namespace made from it.
-  const author = await ask('Author', {
+  const author = await field('Author', {
     option: 'author',
     fallback: gitAuthor(),
     validate: (v) => (v ? null : 'an author is required'),
   })
-  const appId = await ask('App id', {
+  const appId = await field('App id', {
     option: 'id',
     fallback: suggestId(basename(target), author),
     validate: (v) => {
@@ -287,16 +260,16 @@ async function main() {
       return null
     },
   })
-  const appName = await ask('Display name', {
+  const appName = await field('Display name', {
     option: 'name',
     fallback: suggestName(appId),
     validate: (v) => (v ? null : 'a name is required'),
   })
-  const description = await ask('Description', {
+  const description = await field('Description', {
     option: 'description',
     fallback: appName,
   })
-  const apiVersion = await ask('API version', {
+  const apiVersion = await field('API version', {
     option: 'api-version',
     fallback: API_VERSION,
     validate: (v) => (API_VERSION_RE.test(v) ? null : `expected x.y.z, e.g. ${API_VERSION}`),
@@ -304,7 +277,7 @@ async function main() {
   // Not asked for: the app is private, so the folder name will do.
   const packageName = packageNameFor(dirName)
 
-  rl.close()
+  closeInput()
 
   const { pm, version: pmVersion } = detectPackageManager(process.env.npm_config_user_agent)
   const runCmd = runCommand(pm)
@@ -353,27 +326,31 @@ async function main() {
     }
   }
 
-  console.log(`\n${c.green('✔')} Created ${c.bold(appId)} in ${target}${git ? '' : c.dim(' (no git)')}`)
+  log.success(`Created ${c.bold(appId)} in ${target}${git ? '' : c.dim(' (no git)')}`)
 
   let installed = false
   if (!opts['no-install']) {
-    console.log(`\nInstalling dependencies with ${pm}\n`)
-    try {
-      execFileSync(pm, ['install'], { cwd: target, stdio: ['ignore', 'inherit', 'inherit'] })
-      installed = true
-    } catch {
-      // The app is complete without its dependencies; the hint below leaves the install to the user.
-      console.log(c.red(`\n✖ ${pm} install failed, run it again once the cause is fixed`))
+    const s = spinner()
+    s.start(`Installing dependencies with ${pm}`)
+    const result = await runQuietly(pm, ['install'], target)
+    installed = result.ok
+    if (installed) {
+      s.stop(`Installed dependencies with ${pm}`)
+    } else {
+      // The app is complete without its dependencies; the next steps below leave the install to the user.
+      s.error(`${pm} install failed, run it again once the cause is fixed`)
+      if (result.output.trim()) log.message(result.output.trim())
     }
   }
 
-  const where = dirName === '.' ? '' : `cd ${dirName}\n  `
-  console.log(`\nNext:\n\n  ${where}${installed ? '' : `${pm} install\n  `}${runCmd} build\n`)
+  const steps = [...(dirName === '.' ? [] : [`cd ${dirName}`]), ...(installed ? [] : [`${pm} install`]), `${runCmd} build`]
+  note(steps.join('\n'), 'Next steps')
+  outro('Done')
 
   return target
 }
 
 main().catch((err) => {
-  console.error(c.red(`\n✖ ${err instanceof Error ? err.message : String(err)}`))
+  cancel(err instanceof Error ? err.message : String(err))
   process.exitCode = 1
 })
