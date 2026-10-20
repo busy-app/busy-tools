@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
 import { readFileSync } from 'node:fs'
+import { log } from '@clack/prompts'
 import { createCommand } from './commands/create.js'
 import { buildCommand } from './commands/build.js'
 import { appCommand } from './commands/app.js'
 import { c, helpRow } from './lib/colors.js'
+import { formatError } from './lib/errors.js'
 
 // Relative to dist/, where this file lands; package.json stays at the package root.
 const PKG = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { name: string; version: string }
@@ -50,11 +52,12 @@ if (cmd === 'create') console.log(c.dim(VERSION))
 
 const command = COMMANDS[cmd]
 if (!command) {
-  console.error(c.red(`\n✖ Unknown command: ${cmd}\n`) + USAGE)
+  log.error(`Unknown command: ${cmd}`)
+  console.log(USAGE)
   process.exit(1)
 }
 
 command(args).catch((err: unknown) => {
-  console.error(c.red(`\n✖ ${err instanceof Error ? err.message : String(err)}`))
+  log.error(formatError(err))
   process.exitCode = 1
 })

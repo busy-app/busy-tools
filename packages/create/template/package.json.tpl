@@ -8,7 +8,6 @@
   "scripts": {
     "typecheck": "tsc",
     "build": "busy-cli build",
-    "build/tgz": "busy-cli build --tgz",
     "app:install": "busy-cli app install",
     "app:uninstall": "busy-cli app uninstall",
     "app:run": "busy-cli app run",
@@ -18,7 +17,7 @@
     "node": ">=24 <26"
   },
   "devDependencies": {
-    "@busy-app/cli": "^0.5.0",
+    "@busy-app/cli": "^0.6.0",
     "typescript": "~6.0.3",
     "vite": "8.1.4"
   },

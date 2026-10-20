@@ -22,7 +22,10 @@ import {
 } from 'node:fs'
 import { basename, relative, resolve } from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { log } from '@clack/prompts'
 import { build as viteBuild } from 'vite'
+import { c } from './colors.js'
+import { UserError } from './errors.js'
 import { appmetaDir, outRoot, type Project } from './paths.js'
 import { classify, isMedia, KNOWN_DIRS, RESOURCE_DIRS } from './resources.js'
 import { buildViteConfig } from './viteConfig.js'
@@ -115,7 +118,7 @@ function layoutResources(srcDir: string, outDir: string, sourceDirName?: string,
     if (SOURCE_FILE.test(entry.name)) continue
 
     const { target, warning } = classify(entry.name, sourceDirName)
-    if (warning) console.warn(`  ⚠ ${warning}`)
+    if (warning) log.warn(warning)
     const destDir = resolve(outDir, target)
     mkdirSync(destDir, { recursive: true })
     cpSync(src, resolve(destDir, entry.name))
@@ -139,6 +142,10 @@ function rewriteAssetUrls(scriptsDir: string, moved: Map<string, string>): void 
 
 export const DEFAULT_ADDR = 'localhost'
 
+/** What a build leaves: the archive, the package folder, or both. */
+export const EMITS = ['tgz', 'dir', 'both'] as const
+export type Emit = (typeof EMITS)[number]
+
 export type Options = {
   /** Output directory; a relative path resolves against the project root. */
   out?: string
@@ -146,23 +153,21 @@ export type Options = {
   addr?: string
   minify?: boolean
   bundle?: boolean
-  /** Pack into a .tgz, keeping the folder. */
-  tgz?: boolean
-  /** Pack into a .tgz and drop the folder. Not to be combined with `tgz`. */
-  tgzOnly?: boolean
+  /** `tgz` (the default) leaves only `<id>.tgz`, `dir` only the `<id>/` folder, `both` the two. */
+  emit?: Emit
   /** Archive file name; `{id}` and `{version}` are filled in from the manifest. */
   tgzName?: string
 }
 
-/** Builds the app of `project`, returning the package folder or, when packing, the archive. */
+/** Builds the app of `project`, returning the archive or, when only the folder is emitted, the folder. */
 export async function build(project: Project, opts: Options = {}): Promise<string> {
   const { root, app, hasSrc } = project
-  const { out, addr = DEFAULT_ADDR, minify = true, bundle = false, tgz = false, tgzOnly = false, tgzName = '{id}.tgz' } = opts
+  const { out, addr = DEFAULT_ADDR, minify = true, bundle = false, emit = 'tgz', tgzName = '{id}.tgz' } = opts
 
   const destDir = outRoot(project, out)
   const manifest = validateManifest(resolve(appmetaDir(project), 'manifest.json'))
-  console.log(`\n▶ Building ${manifest.id} v${manifest.version}`)
-  if (addr !== DEFAULT_ADDR) console.log(`  addr: ${addr}`)
+  log.step(`Building ${c.bold(manifest.id)} v${manifest.version}`)
+  if (addr !== DEFAULT_ADDR) log.message(`addr: ${addr}`)
 
   const outDir = resolve(destDir, manifest.id)
   // Resolved before the build, so a bad name fails at once.
@@ -173,7 +178,16 @@ export async function build(project: Project, opts: Options = {}): Promise<strin
   rmSync(out === undefined ? destDir : outDir, { recursive: true, force: true })
   mkdirSync(destDir, { recursive: true })
 
-  await viteBuild(buildViteConfig(project, { outDir, addr, minify, bundle }))
+  try {
+    await viteBuild(buildViteConfig(project, { outDir, addr, minify, bundle }))
+  } catch (err) {
+    // Rolldown gathers build errors under a parent error with stack traces; individual messages contain all necessary details.
+    const inner = (err as { errors?: unknown }).errors
+    if (Array.isArray(inner) && inner.length > 0) {
+      throw new UserError(`The build failed:\n${inner.map((e) => (e instanceof Error ? e.message : String(e))).join('\n\n')}`)
+    }
+    throw err
+  }
 
   if (!existsSync(resolve(outDir, 'scripts/main.js'))) {
     throw new Error('build produced no scripts/main.js')
@@ -193,7 +207,7 @@ export async function build(project: Project, opts: Options = {}): Promise<strin
     // A resource in the app's root is in no folder the build takes, so it would be missing on the device without a word.
     for (const entry of readdirSync(app, { withFileTypes: true })) {
       if (!entry.isFile() || entry.name.startsWith('.') || !isMedia(entry.name)) continue
-      console.warn(`  ⚠ ${entry.name} is not packaged, move it to ${classify(entry.name).target}/`)
+      log.warn(`${entry.name} is not packaged, move it to ${classify(entry.name).target}/`)
     }
   }
 
@@ -206,17 +220,17 @@ export async function build(project: Project, opts: Options = {}): Promise<strin
   }
 
   const scripts = readdirSync(resolve(outDir, 'scripts')).sort()
-  console.log(`  scripts: ${scripts.join(', ')}`)
+  log.message(`scripts: ${scripts.join(', ')}`)
 
   let result = outDir
 
-  if (tgz || tgzOnly) {
+  if (emit !== 'dir') {
     // Packed from destDir so the archive holds the <id>/ folder itself.
     execFileSync('tar', ['-czf', archive, '-C', destDir, manifest.id], { stdio: 'inherit' })
-    if (tgzOnly) rmSync(outDir, { recursive: true, force: true })
+    if (emit === 'tgz') rmSync(outDir, { recursive: true, force: true })
     result = archive
   }
 
-  console.log(`\n✔ Done → ${relative(root, result) || result}`)
+  log.success(`Done → ${relative(root, result) || result}`)
   return result
 }

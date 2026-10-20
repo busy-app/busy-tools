@@ -3,22 +3,30 @@
 `busy-cli` builds a JavaScript app for the BUSY Bar into a device package and manages apps on a connected BUSY Bar.
 
 ```sh
-pnpm add -D @busy-app/cli
+npm install -D @busy-app/cli     # or: pnpm add -D, yarn add -D, bun add -D
 ```
 
 | Command | Description |
 | --- | --- |
-| `busy-cli create [dir]` | scaffolds a new app via `pnpm create @busy-app/app` |
+| `busy-cli create [dir]` | scaffolds a new app with `<pm> create @busy-app/app` |
 | `busy-cli build` | builds the app in the current folder into a package |
 | `busy-cli app <command>` | installs, uninstalls, runs or stops an app on a connected BUSY Bar |
 
 `busy-cli <command> --help` lists the options for each command.
 
+## create
+
+```sh
+busy-cli create [dir] [options]
+```
+
+Runs `<pm> create @busy-app/app` using the package manager specified via `--package-manager <npm|pnpm|yarn|bun>`, which then installs the app with that package manager. Without the flag, or with an unknown name, `busy-cli create` prompts you interactively, with pnpm preselected. Without a terminal, interactive prompts cannot be shown, so the flag is required. All other options are forwarded to the generator; see [`@busy-app/create-app`](../create).
+
 ## The project
 
 `busy-cli build` and `busy-cli app` work on the folder they are run in, and look nowhere else: not above it, not below it.
 
-The app sits either under `src/`, as scaffolded by `pnpm create @busy-app/app`, or right in the project folder:
+The app sits either under `src/`, as scaffolded by `busy-cli create` or `npm create @busy-app/app`, or right in the project folder:
 
 ```
 my-app/                          my-app/
@@ -82,7 +90,7 @@ Without `src/`, the app shares its folder with the rest of the project, so only 
 busy-cli build
 ```
 
-The package lands in `dist/<id>/`, named after the manifest id:
+The package lands in `dist/<id>.tgz`, named after the manifest id. The archive holds the `<id>/` folder, the one `--emit dir` leaves instead:
 
 ```
 dist/
@@ -99,8 +107,7 @@ dist/
 | Option | Description |
 | --- | --- |
 | `--out <path>` | builds into `<path>` instead of `dist/`; a relative path resolves against the project. Only this app's package is replaced there, while the rest of the directory contents are preserved |
-| `--tgz` | also packs the package into `<id>.tgz` alongside it, with the `<id>/` folder at the root of the archive |
-| `--tgz-only` | packs the `.tgz` and removes the folder |
+| `--emit <tgz\|dir\|both>` | what the build leaves: `tgz`, the default, only `<id>.tgz`; `dir` only the `<id>/` folder; `both` the two |
 | `--tgz-name <name>` | names the archive; `{id}` and `{version}` in the name are replaced with the manifest values, e.g. `--tgz-name "{id}-{version}.tgz"` |
 | `--addr <host>` | the BUSY Bar address the app connects to, `localhost` by default: the device running the app |
 | `--no-minify` | readable output, for debugging on the device |
@@ -124,7 +131,7 @@ busy-cli app stop
 
 The file and the id can be omitted when the command is run from an app folder:
 
-- `install` takes `dist/<id>.tgz`, the package produced by `busy-cli build --tgz`. It does not build anything: without that file it exits with an error. A package built elsewhere or under another name is passed as a path.
+- `install` takes `dist/<id>.tgz`, the package produced by `busy-cli build`. It does not build anything: without that file it exits with an error. A package built elsewhere or under another name is passed as a path.
 - `uninstall` and `run` read the id from `appmeta/manifest.json`.
 
 When specified explicitly, the file and the id work from any folder.

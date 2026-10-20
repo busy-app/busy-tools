@@ -2,6 +2,7 @@
 # busy-tools
 
 ### Tooling for building JavaScript apps for the [BUSY Bar](https://busy.bar).
+
 </div>
 
 ## Quickstart
@@ -20,6 +21,7 @@ npm run build         # builds the app and packs it into dist/<id>.tgz
 npm run app:install   # installs it on the BUSY Bar connected over USB
 npm run app:run       # launches the installed app
 ```
+
 These commands call `busy-cli` under the hood. More about it below.
 
 ## Manage apps with CLI
@@ -32,14 +34,14 @@ npm install -D @busy-app/cli
 
 ### Reference
 
-| Command | Description |
-| --- | --- |
-| `busy-cli create [dir]` | scaffolds a new app via `pnpm create @busy-app/app` |
-| `busy-cli build` | builds the app in the current folder into a .tgz archive |
-| `busy-cli app install [file.tgz]` | installs built app on a connected BUSY Bar |
-| `busy-cli app uninstall [app-id]` | uninstalls an app by id |
-| `busy-cli app run [app-id]` | runs installed app by id |
-| `busy-cli app stop` | stops (any currently running) app |
+| Command                           | Description                                              |
+| --------------------------------- | -------------------------------------------------------- |
+| `busy-cli create [dir]`           | scaffolds a new app via `pnpm create @busy-app/app`      |
+| `busy-cli build`                  | builds the app in the current folder into a .tgz archive |
+| `busy-cli app install [file.tgz]` | installs built app on a connected BUSY Bar               |
+| `busy-cli app uninstall [app-id]` | uninstalls an app by id                                  |
+| `busy-cli app run [app-id]`       | runs installed app by id                                 |
+| `busy-cli app stop`               | stops (any currently running) app                        |
 
 `busy-cli <command> --help` lists the options for each command.
 

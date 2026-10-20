@@ -15,14 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
+{{ciSetup}}
 
       - name: Read the manifest
         id: manifest
@@ -50,9 +43,9 @@ jobs:
             echo "- API version: $api_version"
           } > "$RUNNER_TEMP/details.md"
 
-      - run: pnpm typecheck
+      - run: {{run}} typecheck
 
-      - run: pnpm build --tgz --tgz-name "{id}-{version}.tgz"
+      - run: {{run}} build{{argsSep}} --tgz-name "{id}-{version}.tgz"
 
       # A release made from the UI already exists by the time the tag push gets here: attach the archive to it and keep whatever notes were written by hand, below the app's details.
       - name: Publish the release

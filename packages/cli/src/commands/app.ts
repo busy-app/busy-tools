@@ -1,9 +1,11 @@
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { basename, relative, resolve } from 'node:path'
+import { log, spinner } from '@clack/prompts'
 import { readAppId } from '../lib/build.js'
 import { c, helpRow } from '../lib/colors.js'
 import { DEFAULT_ADDR, type Device, ensureReachable, request, takeDevice } from '../lib/device.js'
+import { buildHint } from '../lib/hints.js'
 import { findProject, outRoot } from '../lib/paths.js'
 
 const USAGE = `
@@ -18,7 +20,7 @@ ${helpRow('run [app-id]', 'launch an installed app')}
 ${helpRow('stop', 'quit the running app')}
 
   Run from an app folder, ${c.cyan('uninstall')} and ${c.cyan('run')} need no id: it is read from appmeta/manifest.json.
-  ${c.cyan('install')} without a file takes dist/<id>.tgz of that folder, the package ${c.cyan('busy-cli build --tgz')} makes. It does not build anything itself.
+  ${c.cyan('install')} without a file takes dist/<id>.tgz of that folder, the package ${c.cyan('busy-cli build')} makes. It does not build anything itself.
 
 ${c.bold('Options:')}
 ${helpRow('--addr <host>', `BUSY Bar address ${c.dim(`(default: ${DEFAULT_ADDR}, its default address over USB)`)}`)}
@@ -85,16 +87,58 @@ function ownAppId(command: string): string {
   return readAppId(project)
 }
 
-/** The package of the app in the current folder, where `busy-cli build --tgz` leaves it. Nothing is built here: a missing package is an error. */
+/** The package of the app in the current folder, where `busy-cli build` leaves it. Nothing is built here: a missing package is an error. */
 function ownPackage(): string {
   const project = findProject(process.cwd())
   if (!project) throw new Error(`app install needs a path to a .tgz package.\nOr run it from ${APP_FOLDER}.`)
 
   const path = resolve(outRoot(project), `${readAppId(project)}.tgz`)
   if (!existsSync(path)) {
-    throw new Error(`Nothing to install: there is no ${relative(process.cwd(), path)}.\nBuild it first with busy-cli build --tgz, or pass the path to a .tgz package.`)
+    throw new Error(`Nothing to install: there is no ${relative(process.cwd(), path)}.\nBuild it first with ${buildHint(project.root)}, or pass the path to a .tgz package.`)
   }
   return path
+}
+
+/** Seconds since `start`, as shown after a step: "1.2s". */
+const since = (start: number) => `${((performance.now() - start) / 1000).toFixed(1)}s`
+
+/** A file size in the unit that reads best: "812 B", "48.3 KB", "1.2 MB". */
+function size(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+/**
+ * Runs one step of a command under a spinner, showing progress while it runs and reporting failures clearly.
+ * @param running - Status message displayed while running, e.g. "Uploading app.tgz".
+ * @param work - The async operation to execute.
+ * @param done - Success message formatted using the step result and elapsed time.
+ * @returns The result of the step.
+ */
+async function step<T>(running: string, work: () => Promise<T>, done: (result: T, took: string) => string): Promise<T> {
+  // Without a terminal the spinner's redraws would land in the log as escape codes, so only the outcome is printed.
+  const s = process.stdout.isTTY ? spinner() : undefined
+  s?.start(running)
+  const start = performance.now()
+  try {
+    const result = await work()
+    const line = done(result, since(start))
+    if (s) s.stop(line)
+    else log.step(line)
+    return result
+  } catch (err) {
+    // The step is marked failed here; what went wrong is printed once the error reaches the top.
+    if (s) s.error(`${running} failed`)
+    else log.warn(`${running} failed`)
+    throw err
+  }
+}
+
+/** Verifies that the device is reachable before making the first request. */
+function connectStep(device: Device): Promise<void> {
+  const host = device.base.host
+  return step(`Connecting to ${host}`, () => ensureReachable(device), () => `Connected to ${host}`)
 }
 
 async function install(device: Device, file: string): Promise<void> {
@@ -102,37 +146,44 @@ async function install(device: Device, file: string): Promise<void> {
   if (!existsSync(path)) throw new Error(`No such file: ${path}`)
 
   const body = await readFile(path)
-  await ensureReachable(device)
+  const name = `${basename(path)} (${size(body.length)})`
+  const start = performance.now()
 
-  console.log(`\n▶ Uploading ${basename(path)} to ${device.base.host}`)
-  const { install_key, staged, installed } = await request<StageResult>(device, 'POST', '/api/apps/stage', {
-    body,
-    timeoutMs: INSTALL_TIMEOUT_MS,
-  })
+  await connectStep(device)
 
-  console.log(`  ${installed ? `replacing v${installed.version} with` : 'installing'} ${staged.id} v${staged.version}`)
-  await request(device, 'POST', '/api/apps/install', { query: { install_key }, timeoutMs: INSTALL_TIMEOUT_MS })
+  const { install_key, staged, installed } = await step(
+    `Uploading ${name}`,
+    () => request<StageResult>(device, 'POST', '/api/apps/stage', { body, timeoutMs: INSTALL_TIMEOUT_MS }),
+    (_, took) => `Uploaded ${name} in ${took}`,
+  )
+  log.step(`Staged ${c.bold(staged.name)} v${staged.version}${installed ? `, replacing v${installed.version}` : ''}`)
 
-  console.log(`\n✔ Installed ${c.bold(staged.name)} ${c.dim(`(${staged.id})`)}`)
+  await step(
+    `Installing ${staged.name}`,
+    () => request(device, 'POST', '/api/apps/install', { query: { install_key }, timeoutMs: INSTALL_TIMEOUT_MS }),
+    (_, took) => `Installed in ${took}`,
+  )
+
+  log.success(`Installed ${c.bold(staged.name)} ${c.dim(`(${staged.id})`)} in ${since(start)}`)
 }
 
 async function run(device: Device, appId: string): Promise<void> {
-  await ensureReachable(device)
-  await request(device, 'POST', '/api/apps/launch', { query: { app_id: appId } })
+  await connectStep(device)
+  await step(`Launching ${appId}`, () => request(device, 'POST', '/api/apps/launch', { query: { app_id: appId } }), (_, took) => `Launched in ${took}`)
 
-  console.log(`\n✔ Launched ${c.bold(appId)}`)
+  log.success(`Launched ${c.bold(appId)}`)
 }
 
 async function stop(device: Device): Promise<void> {
-  await ensureReachable(device)
-  await request(device, 'POST', '/api/apps/quit')
+  await connectStep(device)
+  await step('Stopping the running app', () => request(device, 'POST', '/api/apps/quit'), (_, took) => `Stopped in ${took}`)
 
-  console.log('\n✔ Stopped')
+  log.success('Stopped')
 }
 
 async function uninstall(device: Device, appId: string): Promise<void> {
-  await ensureReachable(device)
-  await request(device, 'DELETE', '/api/apps', { query: { app_id: appId } })
+  await connectStep(device)
+  await step(`Uninstalling ${appId}`, () => request(device, 'DELETE', '/api/apps', { query: { app_id: appId } }), (_, took) => `Uninstalled in ${took}`)
 
-  console.log(`\n✔ Uninstalled ${c.bold(appId)}`)
+  log.success(`Uninstalled ${c.bold(appId)}`)
 }

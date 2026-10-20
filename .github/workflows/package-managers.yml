@@ -1,0 +1,78 @@
+# Scaffolds an app with each package manager the generator supports, then installs, type-checks and builds it for real. Slower than CI and dependent on the registry, so it runs on the release PR and on demand rather than on every push.
+
+name: Package managers
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+concurrency:
+  group: package-managers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scaffold:
+    # Only the PR changesets opens, out of every pull request.
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'changeset-release/main'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pm: npm
+            run: npm run
+          - pm: pnpm
+            run: pnpm
+          - pm: yarn
+            name: yarn-1
+            run: yarn
+          # Yarn 2+ comes through Corepack, from the packageManager field the generator writes for it.
+          - pm: yarn
+            name: yarn-4
+            run: yarn
+          - pm: bun
+            run: bun run
+    name: ${{ matrix.name || matrix.pm }}
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      # Corepack's own default is Yarn 1.x.
+      - if: matrix.pm == 'yarn'
+        run: corepack enable
+
+      - if: matrix.name == 'yarn-4'
+        run: corepack prepare yarn@stable --activate
+
+      - if: matrix.pm == 'bun'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Scaffold
+        working-directory: ${{ runner.temp }}
+        run: |
+          # The generator reads the package manager from the user agent `<pm> create` would set, here with the version actually installed; the local build is run directly, as `<pm> create` would fetch the published one. Outside the repository, so its packageManager field does not stand in for the version.
+          export npm_config_user_agent="${{ matrix.pm }}/$(${{ matrix.pm }} --version) npm/? node/$(node --version) linux x64"
+          echo "$npm_config_user_agent"
+          node "$GITHUB_WORKSPACE/packages/create/dist/index.js" app --author CI --name App --description CI --no-git < /dev/null
+          # A failed install is only reported by the generator, so it is checked here.
+          test -x app/node_modules/.bin/busy-cli
+
+      - name: Type-check and build
+        working-directory: ${{ runner.temp }}/app
+        run: |
+          ${{ matrix.run }} typecheck
+          ${{ matrix.run }} build
+          # The app builds with the CLI from the registry, whose default output differs between versions; e2e checks what it is.
+          test -n "$(ls -A dist)"

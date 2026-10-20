@@ -1,6 +1,6 @@
 {
   "name": "@busy-app/create-app",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Scaffolds a JavaScript app for the BUSY Bar",
   "license": "MIT",
   "repository": {
@@ -13,6 +13,7 @@
   },
   "type": "module",
   "bin": {
+    "create-app": "dist/index.js",
     "busy-create-app": "dist/index.js"
   },
   "files": [
@@ -37,5 +38,8 @@
   "devDependencies": {
     "@types/node": "^22.19.4",
     "typescript": "~6.0.3"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.8.1"
   }
 }
