@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
-import { argsSeparator, ciSetup, detectPackageManager, installArgs, isYarnBerry, runCommand } from '../dist/packageManager.js'
+import { argsSeparator, ciSetup, detectPackageManager, installArgs, isYarnBerry, runCommand, yarnrc } from '../dist/packageManager.js'
 
 /** User agents in the format each package manager sets them. */
 const AGENTS = {
@@ -55,6 +55,20 @@ describe('installArgs', () => {
     assert.deepEqual(installArgs('yarn', '1.22.22'), ['install'])
     assert.deepEqual(installArgs('yarn', undefined), ['install'])
     for (const pm of ['npm', 'pnpm', 'bun']) assert.deepEqual(installArgs(pm, '1.0.0'), ['install'], pm)
+  })
+})
+
+describe('yarnrc', () => {
+  test('lets the @busy-app packages past the age gate from Yarn 4.10', () => {
+    for (const version of ['4.10.0', '4.18.1', '5.0.0']) assert.match(yarnrc(version), /npmPreapprovedPackages:\n {2}- "@busy-app\/\*"/, version)
+  })
+
+  test('leaves the setting out where Yarn would stop at it', () => {
+    for (const version of ['4.9.4', '3.8.0', '1.22.22', undefined]) assert.doesNotMatch(yarnrc(version), /npmPreapprovedPackages/, String(version))
+  })
+
+  test('always keeps the dependencies in node_modules', () => {
+    for (const version of ['4.18.1', '1.22.22', undefined]) assert.match(yarnrc(version), /^nodeLinker: node-modules$/m, String(version))
   })
 })
 

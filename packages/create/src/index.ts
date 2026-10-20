@@ -20,7 +20,7 @@ import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import { cancel, intro, log, note, outro, spinner } from '@clack/prompts'
-import { argsSeparator, ciSetup, detectPackageManager, installArgs, isYarnBerry, runCommand } from './packageManager.js'
+import { argsSeparator, ciSetup, detectPackageManager, installArgs, isYarnBerry, runCommand, yarnrc } from './packageManager.js'
 import { answered, ask, c, closeInput, runQuietly } from './ui.js'
 
 // Relative to dist/, where this file lands; template/ stays at the package root.
@@ -161,11 +161,6 @@ type Values = {
   ciSetup: string
 }
 
-/** Keeps Yarn 2+ from switching the app to Plug'n'Play, which leaves no node_modules for the build tools to resolve from. */
-const YARNRC = `# Dependencies go into node_modules, where the build tools look for them, instead of Yarn 2+'s Plug'n'Play. Yarn 1 ignores this file.
-nodeLinker: node-modules
-`
-
 /** Substitutes {{placeholders}}; an unknown one throws. */
 function fill(text: string, values: Values): string {
   return text.replace(/\{\{(\w+)\}\}/g, (_, key: string) => {
@@ -299,7 +294,7 @@ async function main() {
     })
 
     if (pm === 'yarn') {
-      writeFileSync(resolve(target, '.yarnrc.yml'), YARNRC)
+      writeFileSync(resolve(target, '.yarnrc.yml'), yarnrc(pmVersion))
       // Marks the app as a project of its own, so Yarn 2+ does not refuse to install it inside another one.
       writeFileSync(resolve(target, 'yarn.lock'), '')
     }

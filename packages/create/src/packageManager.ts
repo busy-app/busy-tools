@@ -25,6 +25,37 @@ export function detectPackageManager(userAgent: string | undefined): { pm: Packa
   return { pm: name, version: version && VERSION_RE.test(version) ? version : undefined }
 }
 
+/** Whether version `a` is `b` or later; both are plain x.y.z. */
+function atLeast(a: string, b: string): boolean {
+  const [x = 0, y = 0, z = 0] = a.split('.').map(Number)
+  const [p = 0, q = 0, r = 0] = b.split('.').map(Number)
+  return x !== p ? x > p : y !== q ? y > q : z >= r
+}
+
+/** The first Yarn that knows npmPreapprovedPackages; an earlier one stops at a setting it does not know. */
+const YARN_AGE_GATE = '4.10.0'
+
+/**
+ * The generated app's .yarnrc.yml, which Yarn 1 ignores.
+ * @param version - The Yarn version, which decides what the file may hold.
+ * @returns `nodeLinker: node-modules`, and for Yarn 4.10+ the @busy-app packages let past its quarantine of versions younger than a day, so that a new app installs on the day the CLI or the library is released.
+ */
+export function yarnrc(version: string | undefined): string {
+  const lines = [
+    "# Dependencies go into node_modules, where the build tools look for them, instead of Yarn 2+'s Plug'n'Play. Yarn 1 ignores this file.",
+    'nodeLinker: node-modules',
+  ]
+  if (version && atLeast(version, YARN_AGE_GATE)) {
+    lines.push(
+      '',
+      '# Yarn holds back versions published less than a day ago; the BUSY Bar packages this app is built with are let through on the day they are released.',
+      'npmPreapprovedPackages:',
+      '  - "@busy-app/*"',
+    )
+  }
+  return `${lines.join('\n')}\n`
+}
+
 /** Whether a Yarn version is 2 or later, which reads a different yarn.lock than Yarn 1 and is set up through Corepack. */
 export function isYarnBerry(version: string | undefined): boolean {
   return version !== undefined && !version.startsWith('1.')
