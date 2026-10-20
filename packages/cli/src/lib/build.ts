@@ -25,6 +25,7 @@ import { execFileSync } from 'node:child_process'
 import { log } from '@clack/prompts'
 import { build as viteBuild } from 'vite'
 import { c } from './colors.js'
+import { UserError } from './errors.js'
 import { appmetaDir, outRoot, type Project } from './paths.js'
 import { classify, isMedia, KNOWN_DIRS, RESOURCE_DIRS } from './resources.js'
 import { buildViteConfig } from './viteConfig.js'
@@ -177,7 +178,16 @@ export async function build(project: Project, opts: Options = {}): Promise<strin
   rmSync(out === undefined ? destDir : outDir, { recursive: true, force: true })
   mkdirSync(destDir, { recursive: true })
 
-  await viteBuild(buildViteConfig(project, { outDir, addr, minify, bundle }))
+  try {
+    await viteBuild(buildViteConfig(project, { outDir, addr, minify, bundle }))
+  } catch (err) {
+    // Rolldown gathers build errors under a parent error with stack traces; individual messages contain all necessary details.
+    const inner = (err as { errors?: unknown }).errors
+    if (Array.isArray(inner) && inner.length > 0) {
+      throw new UserError(`The build failed:\n${inner.map((e) => (e instanceof Error ? e.message : String(e))).join('\n\n')}`)
+    }
+    throw err
+  }
 
   if (!existsSync(resolve(outDir, 'scripts/main.js'))) {
     throw new Error('build produced no scripts/main.js')

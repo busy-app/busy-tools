@@ -6,6 +6,7 @@ import { createCommand } from './commands/create.js'
 import { buildCommand } from './commands/build.js'
 import { appCommand } from './commands/app.js'
 import { c, helpRow } from './lib/colors.js'
+import { formatError } from './lib/errors.js'
 
 // Relative to dist/, where this file lands; package.json stays at the package root.
 const PKG = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { name: string; version: string }
@@ -57,6 +58,6 @@ if (!command) {
 }
 
 command(args).catch((err: unknown) => {
-  log.error(err instanceof Error ? err.message : String(err))
+  log.error(formatError(err))
   process.exitCode = 1
 })
