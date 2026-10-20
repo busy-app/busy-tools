@@ -330,15 +330,20 @@ async function main() {
 
   let installed = false
   if (!opts['no-install']) {
-    const s = spinner()
-    s.start(`Installing dependencies with ${pm}`)
+    // Without a terminal the spinner's redraws would land in the log as escape codes, so only the outcome is printed.
+    const s = process.stdout.isTTY ? spinner() : undefined
+    s?.start(`Installing dependencies with ${pm}`)
     const result = await runQuietly(pm, installArgs(pm, pmVersion), target)
     installed = result.ok
     if (installed) {
-      s.stop(`Installed dependencies with ${pm}`)
+      const done = `Installed dependencies with ${pm}`
+      if (s) s.stop(done)
+      else log.step(done)
     } else {
       // The app is complete without its dependencies; the next steps below leave the install to the user.
-      s.error(`${pm} install failed, run it again once the cause is fixed`)
+      const failed = `${pm} install failed, run it again once the cause is fixed`
+      if (s) s.error(failed)
+      else log.warn(failed)
       if (result.output.trim()) log.message(result.output.trim())
     }
   }
