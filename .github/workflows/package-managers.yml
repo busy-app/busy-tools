@@ -73,5 +73,6 @@ jobs:
         working-directory: ${{ runner.temp }}/app
         run: |
           ${{ matrix.run }} typecheck
-          ${{ matrix.run }} build/tgz
-          test -f dist/*.tgz
+          ${{ matrix.run }} build
+          # The app builds with the CLI from the registry, whose default output differs between versions; e2e checks what it is.
+          test -n "$(ls -A dist)"
