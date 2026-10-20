@@ -13,6 +13,7 @@
   },
   "type": "module",
   "bin": {
+    "create-app": "dist/index.js",
     "busy-create-app": "dist/index.js"
   },
   "files": [
