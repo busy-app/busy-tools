@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
-import { argsSeparator, ciSetup, detectPackageManager, isYarnBerry, runCommand } from '../dist/packageManager.js'
+import { argsSeparator, ciSetup, detectPackageManager, installArgs, isYarnBerry, runCommand } from '../dist/packageManager.js'
 
 /** User agents in the format each package manager sets them. */
 const AGENTS = {
@@ -42,6 +42,19 @@ describe('isYarnBerry', () => {
     assert.equal(isYarnBerry('2.0.0'), true)
     assert.equal(isYarnBerry('1.22.22'), false)
     assert.equal(isYarnBerry(undefined), false)
+  })
+})
+
+describe('installArgs', () => {
+  test('lets Yarn 2+ write the new lockfile, which it forbids in CI by default', () => {
+    assert.deepEqual(installArgs('yarn', '4.18.1'), ['install', '--no-immutable'])
+  })
+
+  test('installs plainly with the rest', () => {
+    // Yarn 1 has no --no-immutable, and an unknown version is taken for it.
+    assert.deepEqual(installArgs('yarn', '1.22.22'), ['install'])
+    assert.deepEqual(installArgs('yarn', undefined), ['install'])
+    for (const pm of ['npm', 'pnpm', 'bun']) assert.deepEqual(installArgs(pm, '1.0.0'), ['install'], pm)
   })
 })
 

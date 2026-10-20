@@ -30,6 +30,16 @@ export function isYarnBerry(version: string | undefined): boolean {
   return version !== undefined && !version.startsWith('1.')
 }
 
+/**
+ * The arguments that install a freshly generated app.
+ * @param pm - The package manager.
+ * @param version - Its version, which tells Yarn 2+ from Yarn 1.
+ * @returns `install`, with `--no-immutable` for Yarn 2+: with CI set, as on GitHub Actions, it forbids writing the lockfile by default, and a new app has only the empty one the generator leaves.
+ */
+export function installArgs(pm: PackageManager, version: string | undefined): string[] {
+  return pm === 'yarn' && isYarnBerry(version) ? ['install', '--no-immutable'] : ['install']
+}
+
 /** How a package.json script is run: `npm run build`, `pnpm build`, `yarn build`, `bun run build`; Bun needs `run` as well, since `bun build` invokes its built-in bundler. */
 export function runCommand(pm: PackageManager): string {
   return pm === 'npm' || pm === 'bun' ? `${pm} run` : pm

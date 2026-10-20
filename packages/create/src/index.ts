@@ -20,7 +20,7 @@ import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import { cancel, intro, log, note, outro, spinner } from '@clack/prompts'
-import { argsSeparator, ciSetup, detectPackageManager, isYarnBerry, runCommand } from './packageManager.js'
+import { argsSeparator, ciSetup, detectPackageManager, installArgs, isYarnBerry, runCommand } from './packageManager.js'
 import { answered, ask, c, closeInput, runQuietly } from './ui.js'
 
 // Relative to dist/, where this file lands; template/ stays at the package root.
@@ -332,7 +332,7 @@ async function main() {
   if (!opts['no-install']) {
     const s = spinner()
     s.start(`Installing dependencies with ${pm}`)
-    const result = await runQuietly(pm, ['install'], target)
+    const result = await runQuietly(pm, installArgs(pm, pmVersion), target)
     installed = result.ok
     if (installed) {
       s.stop(`Installed dependencies with ${pm}`)
