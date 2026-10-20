@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Scaffolds a BUSY Bar JS app from template/.
 //
-//   pnpm create @busy-app/app [directory] [options]
+//   npm create @busy-app/app [directory] [options]
 //
-// Asks for the app's author, id, name, description and API version, copies the template with those substituted, initializes a git repository and installs the dependencies. Every prompt has a flag; anything not passed is asked for.
+// Asks for the app's author, id, name, description and API version, copies the template with those substituted, initializes a git repository and installs the dependencies with the package manager that launched it. Every prompt has a flag; anything not passed is asked for.
 
 import { execFileSync } from 'node:child_process'
 import { createInterface } from 'node:readline'
@@ -20,6 +20,7 @@ import {
 import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
+import { argsSeparator, ciSetup, detectPackageManager, isYarnBerry, runCommand } from './packageManager.js'
 
 // Relative to dist/, where this file lands; template/ stays at the package root.
 const TEMPLATE = fileURLToPath(new URL('../template', import.meta.url))
@@ -123,11 +124,11 @@ Options:
   --description <text>  one-line description
   --api-version <x.y.z> minimum BUSY Bar HTTP API version the app needs (default: ${API_VERSION})
   --no-git              skip git init
-  --no-install          skip pnpm install
+  --no-install          skip installing dependencies
   -v, --version         show the version
   -h, --help            show help
 
-Anything not passed is asked for at the prompt.
+Anything not passed is asked for at the prompt. The dependencies are installed with the package manager that launched the generator (npm create, pnpm create, yarn create, bun create), or npm.
 `
 
 /** Parses argv; a bad flag ends the run. */
@@ -158,7 +159,20 @@ type Values = {
   author: string
   packageName: string
   apiVersion: string
+  /** The package manager itself, as in `pnpm install`. */
+  pm: string
+  /** The prefix that runs a script, as in `npm run build`. */
+  run: string
+  /** Put after a script name that is followed by options: ` --` for npm, nothing for the rest. */
+  argsSep: string
+  /** The CI steps that install the dependencies. */
+  ciSetup: string
 }
+
+/** Keeps Yarn 2+ from switching the app to Plug'n'Play, which leaves no node_modules for the build tools to resolve from. */
+const YARNRC = `# Dependencies go into node_modules, where the build tools look for them, instead of Yarn 2+'s Plug'n'Play. Yarn 1 ignores this file.
+nodeLinker: node-modules
+`
 
 /** Substitutes {{placeholders}}; an unknown one throws. */
 function fill(text: string, values: Values): string {
@@ -292,10 +306,38 @@ async function main() {
 
   rl.close()
 
+  const { pm, version: pmVersion } = detectPackageManager(process.env.npm_config_user_agent)
+  const runCmd = runCommand(pm)
+
   // Undo a copy that fails partway, rather than leave a half-written app.
   const preexisting = existsSync(target)
   try {
-    copyTemplate(TEMPLATE, target, { appId, appName, description, author, packageName, apiVersion })
+    copyTemplate(TEMPLATE, target, {
+      appId,
+      appName,
+      description,
+      author,
+      packageName,
+      apiVersion,
+      pm,
+      run: runCmd,
+      argsSep: argsSeparator(pm),
+      ciSetup: ciSetup(pm, pmVersion),
+    })
+
+    if (pm === 'yarn') {
+      writeFileSync(resolve(target, '.yarnrc.yml'), YARNRC)
+      // Marks the app as a project of its own, so Yarn 2+ does not refuse to install it inside another one.
+      writeFileSync(resolve(target, 'yarn.lock'), '')
+    }
+
+    // Yarn 1 and 2+ answer to the same yarn command, and the CI runner defaults to 1.x: this field tells Corepack which version generated the lockfile.
+    if (pm === 'yarn' && isYarnBerry(pmVersion)) {
+      const pkgPath = resolve(target, 'package.json')
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as Record<string, unknown>
+      pkg.packageManager = `yarn@${pmVersion}`
+      writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
+    }
   } catch (err) {
     if (!preexisting) rmSync(target, { recursive: true, force: true })
     throw err
@@ -315,18 +357,18 @@ async function main() {
 
   let installed = false
   if (!opts['no-install']) {
-    console.log('\nInstalling dependencies with pnpm\n')
+    console.log(`\nInstalling dependencies with ${pm}\n`)
     try {
-      execFileSync('pnpm', ['install'], { cwd: target, stdio: ['ignore', 'inherit', 'inherit'] })
+      execFileSync(pm, ['install'], { cwd: target, stdio: ['ignore', 'inherit', 'inherit'] })
       installed = true
     } catch {
       // The app is complete without its dependencies; the hint below leaves the install to the user.
-      console.log(c.red('\n✖ pnpm install failed, run it again once the cause is fixed'))
+      console.log(c.red(`\n✖ ${pm} install failed, run it again once the cause is fixed`))
     }
   }
 
   const where = dirName === '.' ? '' : `cd ${dirName}\n  `
-  console.log(`\nNext:\n\n  ${where}${installed ? '' : 'pnpm install\n  '}pnpm build\n`)
+  console.log(`\nNext:\n\n  ${where}${installed ? '' : `${pm} install\n  `}${runCmd} build\n`)
 
   return target
 }

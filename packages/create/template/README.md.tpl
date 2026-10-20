@@ -7,10 +7,10 @@ A JavaScript app for the BUSY Bar, generated from the BUSY JS app template.
 ## Getting started
 
 ```sh
-pnpm install
-pnpm build/tgz     # build the app and pack it into dist/{{appId}}.tgz
-pnpm app:install   # install it on the BUSY Bar connected over USB
-pnpm app:run       # launch the installed app
+{{pm}} install
+{{run}} build/tgz     # build the app and pack it into dist/{{appId}}.tgz
+{{run}} app:install   # install it on the BUSY Bar connected over USB
+{{run}} app:run       # launch the installed app
 ```
 
 The app's id is `{{appId}}`, set in `src/appmeta/manifest.json`. An id is `<namespace>.<app>`, at most 32 characters, made of Latin letters, digits, underscores, dashes, and dots, and not starting with a dot. If yours still says `app.example`, change it to your own namespace before publishing.
@@ -19,7 +19,7 @@ The app's id is `{{appId}}`, set in `src/appmeta/manifest.json`. An id is `<name
 
 `src/` is the app — everything in it is yours to edit.
 
-The entry point is `src/main.ts` (or `src/main.js`). The name is fixed: the build turns it into `scripts/main.js`, the file the BUSY Bar starts. Any imported modules are emitted as separate files alongside it in `scripts/`, unless `pnpm build --bundle` inlines them.
+The entry point is `src/main.ts` (or `src/main.js`). The name is fixed: the build turns it into `scripts/main.js`, the file the BUSY Bar starts. Any imported modules are emitted as separate files alongside it in `scripts/`, unless `{{run}} build{{argsSep}} --bundle` inlines them.
 
 `src/main.ts` is run from top to bottom, not imported: it starts the app by calling `main()` at the end and must not export anything. Imported modules can use standard exports.
 
@@ -65,25 +65,25 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 
 | Command | Description |
 | --- | --- |
-| `pnpm build` | empties `dist/` and builds the package into it |
-| `pnpm build --out <path>` | builds into `<path>` instead, replacing only this app's package there |
-| `pnpm build/tgz` | also packs the package into a `.tgz` alongside it; the same as `pnpm build --tgz` |
-| `pnpm build --tgz-only` | packs the `.tgz` and leaves nothing else |
-| `pnpm build --tgz --tgz-name <name>` | names the `.tgz`, e.g. `"{id}-{version}.tgz"` |
-| `pnpm build --no-minify` | readable output, for debugging |
-| `pnpm build --bundle` | inlines every module into one `main.js` |
-| `pnpm build --addr <host>` | sets the BUSY Bar address the app connects to, `localhost` by default |
-| `pnpm typecheck` | type-checks the app |
-| `pnpm app:install` | installs `dist/{{appId}}.tgz` on the BUSY Bar; build it first with `pnpm build/tgz` |
-| `pnpm app:uninstall` | removes the app from the BUSY Bar, keeping its settings |
-| `pnpm app:run` | launches the installed app |
-| `pnpm app:stop` | quits the running app |
+| `{{run}} build` | empties `dist/` and builds the package into it |
+| `{{run}} build{{argsSep}} --out <path>` | builds into `<path>` instead, replacing only this app's package there |
+| `{{run}} build/tgz` | also packs the package into a `.tgz` alongside it; the same as `{{run}} build{{argsSep}} --tgz` |
+| `{{run}} build{{argsSep}} --tgz-only` | packs the `.tgz` and leaves nothing else |
+| `{{run}} build{{argsSep}} --tgz --tgz-name <name>` | names the `.tgz`, e.g. `"{id}-{version}.tgz"` |
+| `{{run}} build{{argsSep}} --no-minify` | readable output, for debugging |
+| `{{run}} build{{argsSep}} --bundle` | inlines every module into one `main.js` |
+| `{{run}} build{{argsSep}} --addr <host>` | sets the BUSY Bar address the app connects to, `localhost` by default |
+| `{{run}} typecheck` | type-checks the app |
+| `{{run}} app:install` | installs `dist/{{appId}}.tgz` on the BUSY Bar; build it first with `{{run}} build/tgz` |
+| `{{run}} app:uninstall` | removes the app from the BUSY Bar, keeping its settings |
+| `{{run}} app:run` | launches the installed app |
+| `{{run}} app:stop` | quits the running app |
 
 The four `app:` commands talk to the BUSY Bar connected over USB. For a device connected over Wi-Fi, pass `--addr <host>` with its network IP address or hostname, and `--password <password>` if password protection is enabled:
 
 ```sh
-pnpm app:install --addr <host>
-pnpm app:install --addr <host> --password <password>
+{{run}} app:install{{argsSep}} --addr <host>
+{{run}} app:install{{argsSep}} --addr <host> --password <password>
 ```
 
 ## Build output

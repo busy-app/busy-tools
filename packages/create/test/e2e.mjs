@@ -2,6 +2,8 @@
 //
 //   pnpm test
 //
+// The app is installed and built with npm, which comes with Node; the other package managers are checked only for what the generator writes.
+//
 // The tests share one scaffolded app and each takes it further, so the suite runs with `concurrency: 1`. An early failure leaves the later tests nothing to work from — read the first failure, not the last.
 
 import assert from 'node:assert/strict'
@@ -32,10 +34,20 @@ const EXPECTED = ['appmeta/manifest.json', 'scripts/main.js']
 /** Repository files that must never be packaged as app resources. */
 const FORBIDDEN = ['resources/package.json', 'resources/README.md', 'resources/tsconfig.json']
 
-/** Runs a command, raising an error that carries the command's own output. */
+/**
+ * The environment without the npm_config_* variables of the package manager running the tests, plus the given ones.
+ * @param {Record<string, string>} extra - Variables to set, e.g. the user agent the generator reads its package manager from.
+ */
+function env(extra = {}) {
+  // npm reads those variables as its own config, and the generator would take the runner for the package manager to use.
+  const own = Object.entries(process.env).filter(([key]) => !key.toLowerCase().startsWith('npm_config_'))
+  return { ...Object.fromEntries(own), ...extra }
+}
+
+/** Runs a command, raising an error that carries the command's own output. With no user agent and no terminal, the generator installs with npm. */
 function run(cmd, args, opts = {}) {
   try {
-    return execFileSync(cmd, args, { encoding: 'utf8', stdio: 'pipe', ...opts })
+    return execFileSync(cmd, args, { encoding: 'utf8', stdio: 'pipe', env: env(), ...opts })
   } catch (err) {
     const output = [err.stdout, err.stderr].filter(Boolean).join('\n').trim()
     throw new Error(`${cmd} ${args.join(' ')} failed\n${output}`)
@@ -115,15 +127,15 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     // The generator has installed already; a failure there is only reported, so it is checked here.
     assert.ok(existsSync(resolve(appDir, 'node_modules/.bin/busy-cli')), 'the generator installed no dependencies')
     // --engine-strict: the app pins a Node range, so a wrong version fails here rather than further down.
-    run('pnpm', ['install', '--silent', '--engine-strict'], { cwd: appDir })
+    run('npm', ['install', '--silent', '--engine-strict'], { cwd: appDir })
   })
 
   test('type-checks', () => {
-    run('pnpm', ['typecheck'], { cwd: appDir })
+    run('npm', ['run', 'typecheck'], { cwd: appDir })
   })
 
   test('builds a package', () => {
-    run('pnpm', ['build'], { cwd: appDir })
+    run('npm', ['run', 'build'], { cwd: appDir })
     // The package folder is named after the manifest id.
     const dist = resolve(appDir, 'dist', APP_ID)
 
@@ -144,7 +156,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     writeFileSync(resolve(appDir, 'src/images/icon.png'), '')
     writeFileSync(resolve(appDir, 'src/loose.png'), '')
     try {
-      run('pnpm', ['build'], { cwd: appDir })
+      run('npm', ['run', 'build'], { cwd: appDir })
       for (const file of ['images/icon.png', 'images/loose.png']) {
         assert.ok(existsSync(resolve(appDir, 'dist', APP_ID, file)), `${file} is missing`)
       }
@@ -186,8 +198,8 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     )
 
     try {
-      run('pnpm', ['typecheck'], { cwd: appDir })
-      run('pnpm', ['build'], { cwd: appDir })
+      run('npm', ['run', 'typecheck'], { cwd: appDir })
+      run('npm', ['run', 'build'], { cwd: appDir })
 
       assert.deepEqual(readdirSync(resolve(appDir, 'dist', APP_ID, 'scripts')).sort(), [
         'greeting.js',
@@ -211,14 +223,14 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     const original = readFileSync(main, 'utf8')
     writeFileSync(main, original.replace('function main()', 'export default function main()'))
     try {
-      assert.throws(() => run('pnpm', ['build'], { cwd: appDir }), /must not export anything/)
+      assert.throws(() => run('npm', ['run', 'build'], { cwd: appDir }), /must not export anything/)
     } finally {
       writeFileSync(main, original)
     }
   })
 
   test('redirects the build with --out', () => {
-    run('pnpm', ['build', '--out', '../elsewhere'], { cwd: appDir })
+    run('npm', ['run', 'build', '--', '--out', '../elsewhere'], { cwd: appDir })
     assert.ok(
       existsSync(resolve(work, 'elsewhere', APP_ID, 'scripts/main.js')),
       '--out did not redirect the build',
@@ -226,7 +238,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
   })
 
   test('packs a tgz alongside the folder with --tgz', () => {
-    run('pnpm', ['build', '--tgz'], { cwd: appDir })
+    run('npm', ['run', 'build', '--', '--tgz'], { cwd: appDir })
     const dist = resolve(appDir, 'dist')
 
     assert.ok(existsSync(resolve(dist, `${APP_ID}.tgz`)), 'the archive is missing')
@@ -239,7 +251,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
   })
 
   test('leaves only the tgz with --tgz-only', () => {
-    run('pnpm', ['build', '--tgz-only'], { cwd: appDir })
+    run('npm', ['run', 'build', '--', '--tgz-only'], { cwd: appDir })
     const dist = resolve(appDir, 'dist')
 
     assert.ok(existsSync(resolve(dist, `${APP_ID}.tgz`)), 'the archive is missing')
@@ -247,7 +259,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
   })
 
   test('names the tgz with --tgz-name', () => {
-    run('pnpm', ['build', '--tgz-only', '--tgz-name', '{id}-{version}.tgz'], { cwd: appDir })
+    run('npm', ['run', 'build', '--', '--tgz-only', '--tgz-name', '{id}-{version}.tgz'], { cwd: appDir })
     const manifest = JSON.parse(readFileSync(resolve(appDir, 'src/appmeta/manifest.json'), 'utf8'))
     const archive = `${APP_ID}-${manifest.version}.tgz`
 
@@ -378,5 +390,61 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     })
     const manifest = JSON.parse(readFileSync(resolve(dir, 'src/appmeta/manifest.json'), 'utf8'))
     assert.equal(manifest.id, 'app.nobody.defaults')
+  })
+
+  describe('package managers', () => {
+    /** What each launcher spells into the app: the user agent it runs the generator under, and the packageManager field only Yarn 2+ gets. */
+    const CASES = [
+      { name: 'npm', pm: 'npm', agent: 'npm/11.13.0 node/v24.16.0 linux x64 workspaces/false', build: 'npm run build', withArgs: 'npm run build -- --tgz', ci: 'npm ci' },
+      { name: 'pnpm', pm: 'pnpm', agent: 'pnpm/11.4.0 npm/? node/v24.16.0 linux x64', build: 'pnpm build', withArgs: 'pnpm build --tgz', ci: 'pnpm install --frozen-lockfile' },
+      { name: 'yarn 1', pm: 'yarn', agent: 'yarn/1.22.22 npm/? node/v24.16.0 linux x64', build: 'yarn build', withArgs: 'yarn build --tgz', ci: 'yarn install --frozen-lockfile' },
+      { name: 'yarn 4', pm: 'yarn', agent: 'yarn/4.9.1 npm/? node/v24.16.0 linux x64', build: 'yarn build', withArgs: 'yarn build --tgz', ci: 'yarn install --immutable', field: 'yarn@4.9.1' },
+      { name: 'bun', pm: 'bun', agent: 'bun/1.2.2 npm/? node/v24.16.0 linux x64', build: 'bun run build', withArgs: 'bun run build --tgz', ci: 'bun install --frozen-lockfile' },
+    ]
+
+    /** Scaffolds `<dir>` without git or an install, so no package manager has to be present. */
+    const scaffold = (dir, extraEnv) =>
+      run(
+        resolve(work, 'node_modules/.bin/busy-create-app'),
+        [dir, '--author', APP_AUTHOR, '--name', 'N', '--description', 'd', '--no-git', '--no-install'],
+        { cwd: work, input: '', env: env(extraEnv) },
+      )
+
+    const packageManagerField = (dir) => JSON.parse(readFileSync(resolve(work, dir, 'package.json'), 'utf8')).packageManager
+
+    for (const { name, pm, agent, build, withArgs, ci, field } of CASES) {
+      test(`spells the app for ${name}, the launcher`, () => {
+        const dir = `pm-${name.replace(' ', '')}`
+        const output = scaffold(dir, { npm_config_user_agent: agent })
+
+        assert.match(output, new RegExp(`^  ${pm} install$`, 'm'), 'the hint does not install with it')
+        assert.match(output, new RegExp(`^  ${build}$`, 'm'), 'the hint does not build with it')
+
+        const readme = readFileSync(resolve(work, dir, 'README.md'), 'utf8')
+        assert.ok(readme.includes(`\`${build}\``), `README lacks ${build}`)
+        assert.ok(readme.includes(`\`${withArgs}\``), `README lacks ${withArgs}`)
+
+        for (const workflow of ['ci.yml', 'release.yml']) {
+          const text = readFileSync(resolve(work, dir, '.github/workflows', workflow), 'utf8')
+          assert.match(text, new RegExp(`- run: ${ci}$`, 'm'), `${workflow} does not install with ${name}`)
+          // Steps sit under steps:, or the workflow does not parse.
+          assert.match(text, /^ {6}- uses: actions\/setup-node@v6$/m, `${workflow} lost the step indentation`)
+        }
+
+        // Yarn 2+ would otherwise switch to Plug'n'Play and refuse to install inside another project.
+        assert.equal(existsSync(resolve(work, dir, '.yarnrc.yml')), pm === 'yarn', '.yarnrc.yml')
+        assert.equal(existsSync(resolve(work, dir, 'yarn.lock')), pm === 'yarn', 'yarn.lock')
+        // Only Yarn 2+ needs telling apart from the Yarn 1 a CI runner has.
+        assert.equal(packageManagerField(dir), field)
+      })
+    }
+
+    test('falls back to npm without a launcher', () => {
+      assert.match(scaffold('pm-none'), /^ {2}npm run build$/m)
+    })
+
+    test('falls back to npm for an unsupported launcher', () => {
+      assert.match(scaffold('pm-deno', { npm_config_user_agent: 'deno/2.1.4 npm/? deno/2.1.4 linux x64' }), /^ {2}npm run build$/m)
+    })
   })
 })
