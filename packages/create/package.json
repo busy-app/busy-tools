@@ -1,6 +1,6 @@
 {
   "name": "@busy-app/create-app",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Scaffolds a JavaScript app for the BUSY Bar",
   "license": "MIT",
   "repository": {
