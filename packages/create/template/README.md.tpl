@@ -59,7 +59,7 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 
 ## Input
 
-`listen("input", handler)` delivers the device keys: `ok`, `start` and `back` with a `press` / `release` action, and `encoder` with a `delta` of `1` or `-1`. It returns an unbind function.
+`listen("input", handler)` delivers the device keys: `ok`, `start` and `back` with a `press` / `release` / `short` / `long` / `repeat` action, and `encoder` with a `delta` of `1` or `-1`. It returns an unbind function.
 
 ## Commands
 
@@ -116,7 +116,7 @@ Pushing a git tag matching the manifest `version` (e.g. `0.1.0`) builds the app 
 | `version` | semver, e.g. `1.0.0` — required |
 | `api_version` | minimum BUSY Bar HTTP API version the app needs, e.g. `27.12.0` — required |
 | `description`, `author` | free form, default `""` |
-| `heap_size_kib` | memory for the app heap, 1–256, default 32 |
+| `heap_size_kib` | memory for the app heap, 1–512, default 128 |
 | `debug` | when true, shown only in developer mode, default false |
 
 Raise `heap_size_kib` if the app runs out of memory.
