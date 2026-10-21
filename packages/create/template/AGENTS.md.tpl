@@ -2,7 +2,7 @@
 
 Instructions for AI coding agents working on `{{appName}}` (`{{appId}}`), a JavaScript application for the BUSY Bar. See [README.md](./README.md) for the full build, packaging and manifest reference.
 
-The app runs on the bar itself, in the firmware's embedded JavaScript runtime (JerryScript). It is not Node.js and not a browser.
+The app runs on the bar itself, in the firmware's embedded [JerryScript](https://compat-table.github.io/compat-table/es2016plus/#jerryscript3_0_0) runtime. It is not Node.js and not a browser.
 
 ## Entry point and lifecycle
 
@@ -78,6 +78,7 @@ When in doubt, choose the cheaper option: a slower refresh, fewer requests, less
 - `priority` is 1–100. Keep it at 50 unless the app deliberately needs to take the screen from another one.
 - Colors are `#RRGGBBAA`.
 - `listen("input", handler)` delivers `ok`, `start` and `back` with a `press`, `release`, `short`, `long` or `repeat` action, and `encoder` with a direction and a `delta` of `1` or `-1`. It returns an unbind function.
+- **Use `short` as the default button action, not `press`.** `short` fires once, after a normal press and release; `press` fires immediately on key down and is followed by `short` on release, so treating `press` as a tap reacts before the gesture is complete and can double-fire. Use `long` and `repeat` for hold gestures, and `press`/`release` only when the down and up edges matter.
 - Settings are described in `src/appmeta/settings.json`. Read them with `loadValues()` from `@shared/settings` and fall back to the defaults in code when it returns `null`; persist with `saveValues()`. Do not put secrets in settings files.
 
 ## Code rules
@@ -99,6 +100,7 @@ Run `{{run}} typecheck` and `{{run}} build`, then check:
 - [ ] The app quits cleanly when `back` (or the app's quit action) is used: no timer or listener outlives it.
 - [ ] No path leaks an interval, timeout or listener; errors do not leave timers running.
 - [ ] Memory use is bounded: no unbounded caches, buffers or per-frame copies.
+- [ ] Button activation uses `short`, not `press`; holds use `long` and `repeat`.
 - [ ] Requests are infrequent and do not pile up; failures back off instead of retrying in a tight loop.
 - [ ] Frames send only changed elements and are redrawn only when something visible changes.
 - [ ] `src/appmeta/manifest.json` has a valid `id`, `name` and semver `version`, and `api_version` is no higher than needed.

@@ -61,6 +61,8 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 
 `listen("input", handler)` delivers the device keys: `ok`, `start` and `back` with a `press` / `release` / `short` / `long` / `repeat` action, and `encoder` with a `delta` of `1` or `-1`. It returns an unbind function.
 
+Use `short` as the default action for a button press: it fires once, after a normal press and release. `press` fires immediately on key down and is followed by `short`, so handling `press` as a tap can react twice. Use `long` and `repeat` for hold gestures.
+
 ## Commands
 
 | Command | Description |
