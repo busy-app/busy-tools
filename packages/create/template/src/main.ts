@@ -53,7 +53,7 @@ function main(): void {
 
   // Back leaves the app. Once the timer is cleared and the handler detached, nothing keeps it alive and the device takes the screen back.
   const unbind = listen("input", (event) => {
-    if (stopped || event.key !== "back" || event.action !== "press") return;
+    if (stopped || event.key !== "back" || event.action !== "short") return;
 
     stopped = true;
     clearInterval(timer);
