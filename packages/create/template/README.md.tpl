@@ -28,7 +28,7 @@ my-app/
 ├── src/                          the app
 │   ├── main.ts                   the entry point: function main(), called at the end
 │   ├── appmeta/
-│   │   ├── manifest.json         id, name, version
+│   │   ├── manifest.json         id, name, version, api_version
 │   │   ├── settings.json         the settings screen — optional
 │   │   ├── icon_front_8x8.png    front icon, 8×8 color — optional
 │   │   └── icon_back_11x11.png   back icon, 11×11 grayscale — optional
@@ -106,7 +106,7 @@ Pushing a git tag matching the manifest `version` (e.g. `0.1.0`) builds the app 
 
 ## Manifest
 
-`src/appmeta/manifest.json` carries the app's identity and a couple of knobs:
+`src/appmeta/manifest.json` carries the app's identity and a couple of knobs (see the [apps documentation](https://github.com/busy-app/busybar-firmware/blob/dev/documentation/JavaScript%20Applications.dox.md)):
 
 | Field | Description |
 | --- | --- |

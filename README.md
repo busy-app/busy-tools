@@ -36,12 +36,12 @@ npm install -D @busy-app/cli
 
 | Command                           | Description                                              |
 | --------------------------------- | -------------------------------------------------------- |
-| `busy-cli create [dir]`           | scaffolds a new app via `pnpm create @busy-app/app`      |
-| `busy-cli build`                  | builds the app in the current folder into a .tgz archive |
+| `busy-cli create [dir]`           | scaffolds a new app with `<pm> create @busy-app/app`     |
+| `busy-cli build`                  | builds the app in the current folder into `dist/<id>.tgz`|
 | `busy-cli app install [file.tgz]` | installs built app on a connected BUSY Bar               |
 | `busy-cli app uninstall [app-id]` | uninstalls an app by id                                  |
 | `busy-cli app run [app-id]`       | runs installed app by id                                 |
-| `busy-cli app stop`               | stops (any currently running) app                        |
+| `busy-cli app stop`               | stops the running app                                    |
 
 `busy-cli <command> --help` lists the options for each command.
 
@@ -59,7 +59,12 @@ my-app/
 └── package.json
 ```
 
-It looks for `main.ts` or `main.js` in the current or `src` directory. An app also must have a valid manifest file. Read more about it in the [apps documentation](https://github.com/busy-app/busybar-firmware/blob/dev/documentation/JavaScript%20Applications.dox.md).
+It looks for `main.ts` or `main.js` in the project root, `src/`, or `scripts/` directory. An app also must have a valid manifest file. Read more about it in the [apps documentation](https://github.com/busy-app/busybar-firmware/blob/dev/documentation/JavaScript%20Applications.dox.md).
+
+## Packages
+
+- [`@busy-app/cli`](packages/cli) — builds a JavaScript app for the BUSY Bar into a device package and manages apps on a connected BUSY Bar
+- [`@busy-app/create-app`](packages/create) — scaffolds a JavaScript app for the BUSY Bar. One app, one repository.
 
 ## License
 
