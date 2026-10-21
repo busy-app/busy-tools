@@ -37,7 +37,7 @@ npm install -D @busy-app/cli
 
 | Command                           | Description                                              |
 | --------------------------------- | -------------------------------------------------------- |
-| `busy-cli create [dir]`           | scaffolds a new app with `<pm> create @busy-app/app`     |
+| `busy-cli create [dir]`           | scaffolds a new app with `npm create @busy-app/app`     |
 | `busy-cli build`                  | builds the app in the current folder into `dist/<id>.tgz`|
 | `busy-cli app install [file.tgz]` | installs built app on a connected BUSY Bar               |
 | `busy-cli app uninstall [app-id]` | uninstalls an app by id                                  |
@@ -65,7 +65,7 @@ It looks for `main.ts` or `main.js` in the project root, `src/`, or `scripts/` d
 ## Packages
 
 - [`@busy-app/cli`](packages/cli) — builds a JavaScript app for the BUSY Bar into a device package and manages apps on a connected BUSY Bar
-- [`@busy-app/create-app`](packages/create) — scaffolds a JavaScript app for the BUSY Bar. One app, one repository.
+- [`@busy-app/create-app`](packages/create) — scaffolds a JavaScript app for the BUSY Bar.
 
 ## License
 
