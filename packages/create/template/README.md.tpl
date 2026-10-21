@@ -28,7 +28,7 @@ my-app/
 ├── src/                          the app
 │   ├── main.ts                   the entry point: function main(), called at the end
 │   ├── appmeta/
-│   │   ├── manifest.json         id, name, version
+│   │   ├── manifest.json         id, name, version, api_version
 │   │   ├── settings.json         the settings screen — optional
 │   │   ├── icon_front_8x8.png    front icon, 8×8 color — optional
 │   │   └── icon_back_11x11.png   back icon, 11×11 grayscale — optional
@@ -59,7 +59,7 @@ Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`
 
 ## Input
 
-`listen("input", handler)` delivers the device keys: `ok`, `start` and `back` with a `press` / `release` action, and `encoder` with a `delta` of `1` or `-1`. It returns an unbind function.
+`listen("input", handler)` delivers the device keys: `ok`, `start` and `back` with a `press` / `release` / `short` / `long` / `repeat` action, and `encoder` with a `delta` of `1` or `-1`. It returns an unbind function.
 
 ## Commands
 
@@ -106,7 +106,7 @@ Pushing a git tag matching the manifest `version` (e.g. `0.1.0`) builds the app 
 
 ## Manifest
 
-`src/appmeta/manifest.json` carries the app's identity and a couple of knobs:
+`src/appmeta/manifest.json` carries the app's identity and a couple of knobs (see the [apps documentation](https://github.com/busy-app/busybar-firmware/blob/dev/documentation/JavaScript%20Applications.dox.md)):
 
 | Field | Description |
 | --- | --- |
@@ -116,7 +116,7 @@ Pushing a git tag matching the manifest `version` (e.g. `0.1.0`) builds the app 
 | `version` | semver, e.g. `1.0.0` — required |
 | `api_version` | minimum BUSY Bar HTTP API version the app needs, e.g. `27.12.0` — required |
 | `description`, `author` | free form, default `""` |
-| `heap_size_kib` | memory for the app heap, 1–256, default 32 |
+| `heap_size_kib` | memory for the app heap, 1–512, default 128 |
 | `debug` | when true, shown only in developer mode, default false |
 
 Raise `heap_size_kib` if the app runs out of memory.

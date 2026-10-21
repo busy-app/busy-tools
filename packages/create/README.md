@@ -28,7 +28,7 @@ Any omitted option will be prompted interactively. `--help` lists the flags. Wit
 
 The app is installed with the package manager that launched the generator: `npm create` gives npm, `pnpm create` pnpm, `yarn create` Yarn, `bun create` Bun. When run in any other way (for example, as a global `busy-create-app`), it falls back to npm. To pick one by name, use `busy-cli create --package-manager <name>` from [`@busy-app/cli`](../cli).
 
-This choice is reflected across the generated app: its README, the `Next:` hint, and CI workflows use that package manager's commands. For Yarn, the generator also adds:
+This choice is reflected across the generated app: its README, the `Next steps` hint, and CI workflows use that package manager's commands. For Yarn, the generator also adds:
 
 - a `.yarnrc.yml` with `nodeLinker: node-modules`, since the build needs `node_modules` rather than Yarn 2+'s Plug'n'Play;
 - an empty `yarn.lock`, without which Yarn 2+ refuses to install an app scaffolded inside another project;
@@ -63,7 +63,7 @@ Resources go into `src/images/`, `src/animations/` and `src/sounds/`, created as
 
 Layout, fonts and XPM2 come from `@busy-app/busy-lib`; the build itself from `@busy-app/cli`.
 
-The `build` script empties `dist/` and produces the package as `dist/<id>.tgz`, named after the manifest id, or under the name given with `--tgz-name`; `--emit dir` leaves the `<id>/` folder instead, `--emit both` leaves both, and `--out <path>` puts them elsewhere. The `app:install`, `app:uninstall`, `app:run` and `app:stop` scripts manage the app on a connected BUSY Bar. The generated app's README covers both topics, and [`@busy-app/cli`](../cli) has the details.
+The `build` script empties `dist/` and produces the package as `dist/<id>.tgz`, named after the manifest id, or under the name given with `--tgz-name`; `--emit dir` leaves the `<id>/` directory instead, `--emit both` leaves both, and `--out <path>` puts them elsewhere. The `app:install`, `app:uninstall`, `app:run` and `app:stop` scripts manage the app on a connected BUSY Bar. The generated app's README covers both topics, and [`@busy-app/cli`](../cli) has the details.
 
 ## Working on the generator
 

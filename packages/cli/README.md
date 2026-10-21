@@ -9,8 +9,11 @@ npm install -D @busy-app/cli     # or: pnpm add -D, yarn add -D, bun add -D
 | Command | Description |
 | --- | --- |
 | `busy-cli create [dir]` | scaffolds a new app with `<pm> create @busy-app/app` |
-| `busy-cli build` | builds the app in the current folder into a package |
-| `busy-cli app <command>` | installs, uninstalls, runs or stops an app on a connected BUSY Bar |
+| `busy-cli build` | builds the app in the current folder into `dist/<id>.tgz` |
+| `busy-cli app install [file.tgz]` | installs built app on a connected BUSY Bar |
+| `busy-cli app uninstall [app-id]` | uninstalls an app by id |
+| `busy-cli app run [app-id]` | runs installed app by id |
+| `busy-cli app stop` | stops the running app |
 
 `busy-cli <command> --help` lists the options for each command.
 
@@ -26,19 +29,20 @@ Runs `<pm> create @busy-app/app` using the package manager specified via `--pack
 
 `busy-cli build` and `busy-cli app` work on the folder they are run in, and look nowhere else: not above it, not below it.
 
-The app sits either under `src/`, as scaffolded by `busy-cli create` or `npm create @busy-app/app`, or right in the project folder:
+The app sits under `src/`, as scaffolded by `busy-cli create` or `npm create @busy-app/app`:
 
 ```
-my-app/                          my-app/
-├── src/                         ├── main.js
-│   ├── main.ts                  ├── appmeta/
-│   ├── appmeta/                 │   └── manifest.json
-│   │   └── manifest.json        ├── images/
-│   └── images/                  └── sounds/
+my-app/
+├── src/
+│   ├── main.ts
+│   ├── appmeta/
+│   │   └── manifest.json
+│   ├── images/
+│   └── sounds/
 └── package.json
 ```
 
-With `src/`, the commands also work from inside `src/`. A folder with neither `src/appmeta/manifest.json` nor `appmeta/manifest.json` is not an app, and the command exits with an error.
+The commands also work when run from inside `src/`. For minimal setups, app files can also sit directly in the project root. A folder with neither `src/appmeta/manifest.json` nor `appmeta/manifest.json` is not an app, and the command exits with an error.
 
 ### Entry point
 
@@ -58,7 +62,7 @@ An export in the entry point fails the build. Imported modules can use standard 
 
 ### Manifest
 
-`appmeta/manifest.json` is copied into the package as is. The build checks the fields it relies on:
+`appmeta/manifest.json` is copied into the package as is. Read more about manifest fields in the [apps documentation](https://github.com/busy-app/busybar-firmware/blob/dev/documentation/JavaScript%20Applications.dox.md). The build checks the fields it relies on:
 
 | Field | Rule |
 | --- | --- |
@@ -107,7 +111,7 @@ dist/
 | Option | Description |
 | --- | --- |
 | `--out <path>` | builds into `<path>` instead of `dist/`; a relative path resolves against the project. Only this app's package is replaced there, while the rest of the directory contents are preserved |
-| `--emit <tgz\|dir\|both>` | what the build leaves: `tgz`, the default, only `<id>.tgz`; `dir` only the `<id>/` folder; `both` the two |
+| `--emit <tgz\|dir\|both>` | what the build produces: `tgz` (default), only `<id>.tgz`; `dir`, only the `<id>/` directory; `both`, leaves both |
 | `--tgz-name <name>` | names the archive; `{id}` and `{version}` in the name are replaced with the manifest values, e.g. `--tgz-name "{id}-{version}.tgz"` |
 | `--addr <host>` | the BUSY Bar address the app connects to, `localhost` by default: the device running the app |
 | `--no-minify` | readable output, for debugging on the device |
@@ -124,9 +128,9 @@ busy-cli app stop
 
 | Command | Description |
 | --- | --- |
-| `install` | uploads a package and installs it |
+| `install` | uploads the built app and installs it |
 | `uninstall` | removes an installed app, keeping its settings |
-| `run` | launches an installed app |
+| `run` | runs an installed app |
 | `stop` | quits the running app |
 
 The file and the id can be omitted when the command is run from an app folder:
