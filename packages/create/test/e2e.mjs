@@ -96,7 +96,7 @@ describe('@busy-app/create-app', { concurrency: 1 }, () => {
     assert.equal(pkg.name, 'my-app')
 
     // npm strips .gitignore from tarballs; the generator restores it from _gitignore.
-    for (const file of ['.gitignore', 'package.json', 'README.md']) {
+    for (const file of ['.gitignore', 'package.json', 'README.md', 'AGENTS.md']) {
       assert.ok(existsSync(resolve(appDir, file)), `${file} is missing`)
     }
 

@@ -54,6 +54,7 @@ my-app/
 ├── package.json
 ├── tsconfig.json
 ├── .nvmrc
+├── AGENTS.md                instructions for AI coding agents
 └── README.md
 ```
 
